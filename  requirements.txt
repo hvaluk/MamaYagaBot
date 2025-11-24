@@ -1,5 +1,7 @@
 pyTelegramBotAPI==4.29.1
 python-dotenv==1.0.1
+SQLAlchemy==2.0.44
+ 
 aiohttp==3.13.2
 aiohttp-socks==0.8.1
 aiosignal==1.4.0

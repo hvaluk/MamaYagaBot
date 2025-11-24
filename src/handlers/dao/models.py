@@ -1,6 +1,8 @@
+import os
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import UTC, datetime
+from sqlalchemy import create_engine
 
 Base = declarative_base()
 
@@ -16,5 +18,11 @@ class User(Base):
     is_active = Column(Boolean, default=True) # Is the user active
     registered_at = Column(DateTime, default=datetime.now(tz=UTC)) # Registration timestamp      
 
+   
     def __repr__(self):
         return f"<User(id={self.telegram_id}, username='{self.username}')>"
+    
+engine = create_engine(
+    os.getenv("MAMAYOGADATABASE_URL",
+    'sqlite:///mamayoga_bot.db'), 
+    echo=True)
