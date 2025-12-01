@@ -23,6 +23,6 @@ class User(Base):
         return f"<User(id={self.telegram_id}, username='{self.username}')>"
     
 engine = create_engine(
-    os.getenv("MAMAYOGADATABASE_URL",
+    os.getenv("MAMAYOGA_DATABASE_URL",
     'sqlite:///mamayoga_bot.db'), 
     echo=True)

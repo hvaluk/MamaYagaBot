@@ -1,4 +1,4 @@
-from main import bot
+from src.main import bot
 
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message):
