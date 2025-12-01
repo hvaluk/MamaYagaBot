@@ -1,28 +1,37 @@
 import os
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import UTC, datetime
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'MamaYogaBot_users'
+    telegram_id = Column(Integer, primary_key=True)
+    username = Column(String, nullable=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=True)
+    phone = Column(String(20), nullable=True)
+    is_admin = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    registered_at = Column(DateTime, default=datetime.now(timezone.utc))
 
-    telegram_id = Column(Integer, primary_key=True) # Telegram user ID
-    username = Column(String, nullable=True) # Telegram username (can be null   if not set )
-    first_name = Column(String, nullable=False) # User's first name
-    last_name = Column(String, nullable=True) # User's last name (can be null if not set)
-    phone = Column(String(20), nullable=True) # User's phone number (if provided)
-    is_admin = Column(Boolean, default=False) # Is the user an admin
-    is_active = Column(Boolean, default=True) # Is the user active
-    registered_at = Column(DateTime, default=datetime.now(tz=UTC)) # Registration timestamp      
-
-   
-    def __repr__(self):
-        return f"<User(id={self.telegram_id}, username='{self.username}')>"
-    
+# Синхронный движок для Alembic
 engine = create_engine(
-    os.getenv("MAMAYOGA_DATABASE_URL",
-    'sqlite:///mamayoga_bot.db'), 
-    echo=True)
+    os.getenv("MAMAYOGA_DATABASE_URL", "sqlite:///mamayoga_bot.db"),
+    echo=True
+)
+
+# Асинхронный движок
+DATABASE_URL = os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db")
+async_engine = create_async_engine(DATABASE_URL, echo=True)
+
+# Асинхронная сессия
+AsyncSessionLocal = sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+
