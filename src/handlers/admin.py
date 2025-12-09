@@ -1,9 +1,10 @@
 # src/handlers/admin.py
-from src.common import bot
-from src.dao import crud
-from src.config import ADMIN_IDS
 
-def is_admin(user_id):
+from src.bot import bot
+from src.config import ADMIN_IDS
+from src.services.requests import list_requests  # предполагаем, что этот метод есть и асинхронный
+
+def is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS
 
 @bot.message_handler(commands=["requests"])
@@ -12,18 +13,22 @@ async def cmd_requests(message):
         await bot.send_message(message.chat.id, "У вас нет доступа к этой команде.")
         return
 
-    items = await crud.list_requests(limit=50)
+    # Берем заявки через сервис requests.py
+    items = await list_requests(limit=50)
     if not items:
         await bot.send_message(message.chat.id, "Нет заявок.")
         return
 
     texts = []
     for r in items:
-        user = r.user
-        name = user.first_name or (f"@{user.username}" if user.username else str(user.telegram_id))
-        payload = r.payload or "-"
-        texts.append(f"[{r.id}] {r.request_type} / {r.format_chosen or '-'} / {name} / {payload} / {r.created_at.isoformat()}")
+        user = r.get('user', {})
+        name = user.get('first_name') or (f"@{user.get('username')}" if user.get('username') else str(user.get('telegram_id')))
+        payload = r.get('payload') or "-"
+        texts.append(
+            f"[{r.get('id')}] {r.get('request_type')} / {r.get('format_chosen') or '-'} / {name} / {payload} / {r.get('created_at')}"
+        )
 
+    # Отправляем по частям, чтобы Telegram не обрезал сообщения
     for i in range(0, len(texts), 20):
         chunk = "\n".join(texts[i:i+20])
         await bot.send_message(message.chat.id, f"Заявки:\n{chunk}")
