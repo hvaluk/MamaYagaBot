@@ -1,4 +1,5 @@
 # src/handlers/message.py
+
 from src.common import bot
 
 @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/'))

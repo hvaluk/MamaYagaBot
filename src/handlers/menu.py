@@ -1,4 +1,5 @@
 # src/handlers/menu.py
+
 from telebot import types
 from src.common import bot
 from src.config import PAY_LINK, TRIAL_VIDEO, TRIAL_LECT, SITE

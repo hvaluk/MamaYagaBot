@@ -12,9 +12,9 @@ ADMIN_IDS = set(int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip
 
 DATABASE_URL = os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db")
 
-PAY_LINK = os.getenv("PAY_LINK", "https://client.express-pay.by/show?k=dfb88307-87df-45ed-88c8-9444543bb6a3")
-TRIAL_VIDEO = os.getenv("TRIAL_VIDEO", "https://t.me/c/2556609314/4")
-TRIAL_LECT = os.getenv("TRIAL_LECT", "https://t.me/c/2556609314/6")
-SITE = os.getenv("SITE", "https://anna.b24site.online/kurs")
+PAY_LINK = os.getenv("PAY_LINK")
+TRIAL_VIDEO = os.getenv("TRIAL_VIDEO")
+TRIAL_LECT = os.getenv("TRIAL_LECT")
+SITE = os.getenv("SITE")
 
-FOLLOWUP_CHECK_INTERVAL = int(os.getenv("FOLLOWUP_CHECK_INTERVAL", "60"))
+# FOLLOWUP_CHECK_INTERVAL = int(os.getenv("FOLLOWUP_CHECK_INTERVAL", "60"))
