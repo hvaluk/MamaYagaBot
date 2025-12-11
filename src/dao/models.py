@@ -4,8 +4,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timezone
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession 
-
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 Base = declarative_base()
 
@@ -24,10 +23,14 @@ class User(Base):
         return f"<User(telegram_id={self.telegram_id}, username={self.username})>"
 
 engine = create_engine(
-    os.getenv("MAMAYOGA_DATABASE_URL", "sqlite:///mamayoga_bot.db"), echo=True)
+    os.getenv("MAMAYOGA_DATABASE_URL", "sqlite:///mamayoga_bot.db"), 
+    echo=True
+    )
 
-async_engine = create_engine(
-    os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db"), echo=True) 
+async_engine = create_async_engine(
+    os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db"),
+      echo=True
+)
 
 AsyncSessionLocal = sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
