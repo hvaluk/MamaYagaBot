@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+
+
 Base = declarative_base()
 
 class User(Base):
@@ -14,10 +16,17 @@ class User(Base):
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
+
+    pregnancy_term = Column(String, nullable=True)   # 0-12, 12-29, etc
+    yoga_experience = Column(String, nullable=True)  # none / some / regular
+    contraindications = Column(String, nullable=True)  # ok / yes / unsure
+
     phone = Column(String(50), nullable=True)
     is_admin = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)   
     registered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    requests = relationship("Request", back_populates="user")
 
     def __repr__(self):
         return f"<User(telegram_id={self.telegram_id}, username={self.username})>"
@@ -34,19 +43,20 @@ async_engine = create_async_engine(
 
 AsyncSessionLocal = sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
-# class Request(Base):
-#     __tablename__ = "requests"
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_id = Column(Integer, ForeignKey("users.telegram_id"), nullable=True)
-#     request_type = Column(String, nullable=False)   # "joined","payment","trial","booking"
-#     format_chosen = Column(String, nullable=True)   # "online","individual","consult"
-#     payload = Column(Text, nullable=True)
-#     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class Request(Base):
+    __tablename__ = "requests"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.telegram_id"), nullable=True)
+    request_type = Column(String, nullable=False)   # "joined","payment","trial","booking"
+    format_chosen = Column(String, nullable=True)   # "online","individual","consult" payload = Column(Text, nullable=True)
+    payload = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 #     followup_at = Column(DateTime, nullable=True)
 #     is_followup_sent = Column(Boolean, default=False)
 #     followup_attempts = Column(Integer, default=0)
 
-#     user = relationship("User", backref="requests")
+    user = relationship("User", back_populates="requests")
 
 
 # def followup_after(hours: int = 24):
