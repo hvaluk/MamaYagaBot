@@ -4,6 +4,7 @@ from src.common import bot
 from src.dao.models import AsyncSessionLocal, User
 from src.keyboards.inline_kb import main_kb
 from telebot.types import Message
+from src.texts.start import WELCOME, RETURNING_WELCOME
 
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message: Message):
@@ -19,17 +20,9 @@ async def send_welcome(message: Message):
                     last_name=message.from_user.last_name
                 )
                 session.add(user)  # добавляем нового пользователя
-                text = (
-                    'Привет!\nЯ помощник Анны. '
-                    'Помогу тебе хорошо чувствовать себя во время беременности и подготовиться к родам.\n\n'
-                    'С чего начнём?'
-                )
+                text = WELCOME
             else:
-                text = (
-                    'С возвращением!\nЯ помощник Анны. '
-                    'Помогу тебе хорошо чувствовать себя во время беременности и подготовиться к родам.\n\n'
-                    'С чего начнём?'
-                )
+                text = RETURNING_WELCOME
 
         # commit автоматически выполняется при выходе из async with session.begin()
 
