@@ -51,5 +51,14 @@ SUBSCRIPTION_4_CLASSES_PRICE_EUR = parse_int(os.getenv("SUBSCRIPTION_4_CLASSES_P
 SUBSCRIPTION_8_CLASSES_PRICE_BYN = parse_int(os.getenv("SUBSCRIPTION_8_CLASSES_PRICE_BYN", ""))
 SUBSCRIPTION_8_CLASSES_PRICE_EUR = parse_int(os.getenv("SUBSCRIPTION_8_CLASSES_PRICE_EUR", ""))
 
+# --- Promo ---
+PROMO_TERM = os.getenv("PROMO_TERM", "")
+PROMO_TERM_FOLLOWUP = os.getenv("PROMO_TERM_FOLLOWUP", "")
+
+PREPAYMENT_BYN = parse_int(os.getenv("PREPAYMENT_BYN", ""))
+PREPAYMENT_EUR = parse_int(os.getenv("PREPAYMENT_EUR", ""))
+REST_PRICE_BYN = parse_int(os.getenv("REST_PRICE_BYN", ""))
+REST_PRICE_EUR = parse_int(os.getenv("REST_PRICE_EUR", ""))
+
 # --- Worker ---
 FOLLOWUP_CHECK_INTERVAL = int(os.getenv("FOLLOWUP_CHECK_INTERVAL", "3600"))

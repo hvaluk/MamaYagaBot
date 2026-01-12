@@ -1,10 +1,10 @@
 # src/handlers/course/term.py
-
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
 from src.keyboards.inline_kb import experience_kb
 from src.texts.common import ASK_EXPERIENCE
+from src.fsm import set_state, UserState
 
 TERM_MAP = {
     "term_0_12": "до 12 недель",
@@ -15,7 +15,6 @@ TERM_MAP = {
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("term_"))
 async def save_pregnancy_term(callback: CallbackQuery):
-    """Сохраняем срок беременности и спрашиваем опыт занятий"""
     term = TERM_MAP.get(callback.data)
     if not term:
         return
@@ -24,20 +23,13 @@ async def save_pregnancy_term(callback: CallbackQuery):
         user = await session.get(User, callback.from_user.id)
         if not user:
             return
-
         user.pregnancy_term = term
-        session.add_all([
-            user,
-            Request(
-                user_id=user.telegram_id,
-                request_type="pregnancy_term",
-                payload=term
-            )
-        ])
+        session.add(Request(
+            user_id=user.telegram_id,
+            request_type="pregnancy_term",
+            payload=term
+        ))
         await session.commit()
 
-    await bot.send_message(
-        callback.message.chat.id,
-        ASK_EXPERIENCE,
-        reply_markup=experience_kb()
-    )
+    await bot.send_message(callback.message.chat.id, ASK_EXPERIENCE, reply_markup=experience_kb())
+    set_state(callback.from_user.id, UserState.WAITING_EXPERIENCE)

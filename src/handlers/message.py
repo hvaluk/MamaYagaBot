@@ -1,54 +1,32 @@
 # src/handlers/message.py
-
-# from src.common import bot
-
-# @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/'))
-# async def echo_message(message):
-#     await bot.send_message(message.chat.id, "Спасибо! Чтобы выбрать действие — нажми /start")
-
 from telebot.types import Message
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
-from src.states import UserState
-from src.config import OWNER_IDS
-
-
-from telebot.types import Message
-from src.common import bot
-from src.dao.models import AsyncSessionLocal, User, Request
-from src.states import UserState
+from src.fsm import get_state, clear_state, UserState
 from src.config import OWNER_IDS
 
 @bot.message_handler(content_types=["text"])
 async def receive_contact(message: Message):
-    """Обработка контакта пользователя при противопоказаниях"""
+    user_id = message.from_user.id
+    state = get_state(user_id)
+    if state != UserState.WAITING_CONTACT:
+        return
+
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, message.from_user.id)
-        if not user or user.state != UserState.WAITING_CONTACT:
+        user = await session.get(User, user_id)
+        if not user:
             return
-
-        user.contact = message.text
-        user.state = UserState.IDLE
-
-        session.add_all([
-            user,
-            Request(
-                user_id=user.telegram_id,
-                request_type="contact",
-                payload=message.text
-            )
-        ])
+        user.phone = message.text
+        session.add(Request(
+            user_id=user.telegram_id,
+            request_type="contact",
+            payload=message.text
+        ))
         await session.commit()
 
-    for owner in OWNER_IDS:
-        await bot.send_message(
-            owner,
-            f"📩 Новый контакт\n"
-            f"@{user.username}\n"
-            f"{message.text}"
-        )
+    clear_state(user_id)
 
-    await bot.send_message(
-        message.chat.id,
-        "Спасибо! 💛 Анна скоро напишет тебе."
-    )
+    for owner in OWNER_IDS:
+        await bot.send_message(owner, f"📩 Новый контакт\n@{user.username}\n{message.text}")
+
+    await bot.send_message(message.chat.id, "Спасибо! 💛 Анна скоро напишет тебе.")
