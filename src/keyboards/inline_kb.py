@@ -1,10 +1,12 @@
+# src/keyboards/inline_kb.py
+
 from telebot import types
 from src.config import SITE, COURSE_PAY_LINK, TRIAL_LECT, TRIAL_VIDEO
 
 # Главная клавиатура после /start
 def main_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Приступить к занятиям", callback_data="flow_course"))
+    kb.add(types.InlineKeyboardButton("Приступить к занятиям", callback_data="start_course_flow"))
     kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial"))
     kb.add(types.InlineKeyboardButton("Подробнее о программе и тарифах", callback_data="flow_info"))
     return kb

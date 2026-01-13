@@ -1,0 +1,1 @@
+# src/handlers/course/__init__.py

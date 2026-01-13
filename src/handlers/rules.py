@@ -1,3 +1,4 @@
+# src/handlers/rules.py 
 from src.common import bot
 
 
@@ -7,3 +8,4 @@ async def send_rules(message):
     await bot.reply_to(message, text)
 
 
+    

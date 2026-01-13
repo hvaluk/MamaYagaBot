@@ -1,6 +1,5 @@
 # src/handlers/welcome.py
 
-# src/handlers/welcome.py
 from telebot.types import Message
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User
