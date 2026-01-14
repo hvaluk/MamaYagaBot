@@ -4,7 +4,7 @@ from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
 from src.keyboards.inline_kb import contra_kb
 from src.texts.common import SAFE_TEXT, SAFE_TEXT_EXPERIENCED
-from src.fsm import set_state, UserState
+from src.states import get_state,set_state, UserState
 
 EXP_MAP = {
     "exp_none": "нет",
@@ -12,8 +12,11 @@ EXP_MAP = {
     "exp_regular": "регулярно",
 }
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("exp_"))
-async def save_experience(callback: CallbackQuery):
+@bot.callback_query_handler(
+    func=lambda c: c.data.startswith("exp_")
+    and get_state(c.from_user.id) == UserState.COURSE_EXPERIENCE
+)
+async def course_experience(callback: CallbackQuery):
     experience = EXP_MAP.get(callback.data)
     if not experience:
         return

@@ -5,7 +5,7 @@ from src.common import bot
 from src.dao.models import AsyncSessionLocal, User
 from src.keyboards.inline_kb import main_kb
 from src.texts.start import WELCOME, RETURNING_WELCOME
-from src.fsm import set_state, UserState
+from src.states import set_state, UserState
 
 @bot.message_handler(commands=['start', 'help'])
 async def send_welcome(message: Message):

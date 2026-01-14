@@ -4,7 +4,7 @@ from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
 from src.keyboards.inline_kb import experience_kb
 from src.texts.common import ASK_EXPERIENCE
-from src.fsm import set_state, UserState
+from src.states import get_state, set_state, UserState
 
 TERM_MAP = {
     "term_0_12": "до 12 недель",
@@ -13,16 +13,17 @@ TERM_MAP = {
     "term_38_plus": "38+ недель",
 }
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("term_"))
-async def save_pregnancy_term(callback: CallbackQuery):
-    term = TERM_MAP.get(callback.data)
+@bot.callback_query_handler(
+    func=lambda c: c.data.startswith("term_")
+    and get_state(c.from_user.id) == UserState.COURSE_TERM
+)
+async def course_term(call: CallbackQuery):
+    term = TERM_MAP.get(call.data)
     if not term:
         return
 
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, callback.from_user.id)
-        if not user:
-            return
+        user = await session.get(User, call.from_user.id)
         user.pregnancy_term = term
         session.add(Request(
             user_id=user.telegram_id,
@@ -31,5 +32,5 @@ async def save_pregnancy_term(callback: CallbackQuery):
         ))
         await session.commit()
 
-    await bot.send_message(callback.message.chat.id, ASK_EXPERIENCE, reply_markup=experience_kb())
-    set_state(callback.from_user.id, UserState.WAITING_EXPERIENCE)
+    await bot.send_message(call.message.chat.id, ASK_EXPERIENCE, reply_markup=experience_kb())
+    set_state(call.from_user.id, UserState.COURSE_EXPERIENCE)

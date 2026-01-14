@@ -2,8 +2,7 @@
 from telebot.types import Message
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
-from src.fsm import get_state, clear_state, UserState
-from src.config import OWNER_IDS
+from src.states import get_state, clear_state, UserState
 
 @bot.message_handler(content_types=["text"])
 async def receive_contact(message: Message):
@@ -25,8 +24,4 @@ async def receive_contact(message: Message):
         await session.commit()
 
     clear_state(user_id)
-
-    for owner in OWNER_IDS:
-        await bot.send_message(owner, f"📩 Новый контакт\n@{user.username}\n{message.text}")
-
     await bot.send_message(message.chat.id, "Спасибо! 💛 Анна скоро напишет тебе.")

@@ -10,7 +10,7 @@ async def main():
     except Exception as e:
         print(f"ERROR in polling: {e}")
         await asyncio.sleep(5)
-        await main()  # авто-restart при падении
+        await main()  # auto-restart on crash
 
 if __name__ == "__main__":
     asyncio.run(main())
