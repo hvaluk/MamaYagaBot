@@ -4,19 +4,12 @@ from enum import Enum
 class UserState(str, Enum):
     IDLE = "idle"
 
-    # COURSE FLOW
     COURSE_TERM = "course_term"
     COURSE_EXPERIENCE = "course_experience"
     COURSE_CONTRA = "course_contra"
-    COURSE_FORMAT = "course_format"
     COURSE_CONTACT = "course_contact"
-
-    # TRIAL FLOW
-    TRIAL_TERM = "trial_term"
-    TRIAL_EXPERIENCE = "trial_experience"
-    TRIAL_CONTRA = "trial_contra"
-    TRIAL_CONTENT = "trial_content"
-
+    COURSE_FORMAT = "course_format"
+    COURSE_PAY = "course_pay"
 
 USER_STATE: dict[int, UserState] = {}
 

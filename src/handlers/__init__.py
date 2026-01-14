@@ -34,9 +34,9 @@
 
 # src/handlers/__init__.py
 from src.handlers.welcome import *
-from src.handlers.message import *
-from src.handlers.menu import *
-from src.handlers.booking import *
+# from src.handlers.message import *
+# from src.handlers.menu import *
+# from src.handlers.booking import *
 from src.handlers.course.start import *
 from src.handlers.course.term import *
 from src.handlers.course.experience import *

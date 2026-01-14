@@ -26,3 +26,8 @@ async def send_welcome(message: Message):
 
     await bot.send_message(message.chat.id, text, reply_markup=main_kb())
     set_state(message.from_user.id, UserState.IDLE)
+ 
+
+
+
+ 

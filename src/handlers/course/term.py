@@ -1,4 +1,5 @@
 # src/handlers/course/term.py
+
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
@@ -24,12 +25,10 @@ async def course_term(call: CallbackQuery):
 
     async with AsyncSessionLocal() as session:
         user = await session.get(User, call.from_user.id)
+        if not user:
+            return
         user.pregnancy_term = term
-        session.add(Request(
-            user_id=user.telegram_id,
-            request_type="pregnancy_term",
-            payload=term
-        ))
+        session.add(Request(user_id=user.telegram_id, request_type="pregnancy_term", payload=term))
         await session.commit()
 
     await bot.send_message(call.message.chat.id, ASK_EXPERIENCE, reply_markup=experience_kb())

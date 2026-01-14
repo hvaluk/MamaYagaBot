@@ -1,4 +1,5 @@
 # src/handlers/course/start.py
+
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import pregnancy_kb
