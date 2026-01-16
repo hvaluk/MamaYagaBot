@@ -45,7 +45,7 @@ def leave_contact_kb():
 # Выбор формата курса после противопоказаний или опыта
 def formats_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Комплексный курс (йога + лекции)", callback_data="fmt_course"))
+    kb.add(types.InlineKeyboardButton("Йога онлайн в группе", callback_data="fmt_course"))
     kb.add(types.InlineKeyboardButton("Индивидуальные занятия онлайн", callback_data="fmt_individual"))
     kb.add(types.InlineKeyboardButton("Консультация онлайн", callback_data="fmt_consult"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu"))

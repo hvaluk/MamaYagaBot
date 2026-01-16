@@ -27,3 +27,4 @@ async def cb_menu_trial(call):
 async def cb_menu_back(call):
     await bot.answer_callback_query(call.id)
     await bot.send_message(call.message.chat.id, "Возвращаю в главное меню. Нажми /start")
+

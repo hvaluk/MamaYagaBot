@@ -4,8 +4,8 @@ from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
 from src.keyboards.inline_kb import contra_kb
-from src.texts.common import SAFE_TEXT, SAFE_TEXT_EXPERIENCED
-from src.states import get_state, set_state, UserState
+from src.texts.common import SAFE_TEXT_EXPERIENCED
+from src.states import set_state, get_state, UserState
 
 EXP_MAP = {
     "exp_none": "нет",
@@ -13,23 +13,22 @@ EXP_MAP = {
     "exp_regular": "регулярно",
 }
 
+
 @bot.callback_query_handler(
-    func=lambda c: c.data.startswith("exp_")
-    and get_state(c.from_user.id) == UserState.COURSE_EXPERIENCE
+    func=lambda c: c.data in EXP_MAP and get_state(c.from_user.id) == UserState.COURSE_EXPERIENCE
 )
-async def course_experience(callback: CallbackQuery):
-    experience = EXP_MAP.get(callback.data)
-    if not experience:
-        return
+async def course_experience(call: CallbackQuery):
+    experience = EXP_MAP[call.data]
 
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, callback.from_user.id)
-        if not user:
-            return
+        user = await session.get(User, call.from_user.id)
         user.yoga_experience = experience
-        session.add(Request(user_id=user.telegram_id, request_type="yoga_experience", payload=experience))
+        session.add(Request(
+            user_id=user.telegram_id,
+            request_type="yoga_experience",
+            payload=experience
+        ))
         await session.commit()
 
-    text = SAFE_TEXT_EXPERIENCED if callback.data == "exp_regular" else SAFE_TEXT
-    await bot.send_message(callback.message.chat.id, text, reply_markup=contra_kb())
-    set_state(callback.from_user.id, UserState.COURSE_CONTRA)
+    await bot.send_message(call.message.chat.id, SAFE_TEXT_EXPERIENCED, reply_markup=contra_kb())
+    set_state(call.from_user.id, UserState.COURSE_CONTRA)
