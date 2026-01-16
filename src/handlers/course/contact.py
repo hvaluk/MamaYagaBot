@@ -11,7 +11,7 @@ from src.utils.humanize import humanize, TERM_MAP, EXP_MAP, CONTRA_MAP, FORMAT_M
 async def receive_contact(message: Message):
     user_id = message.from_user.id
 
-    # Получаем контакт от пользователя
+    # Получаем контакт
     if message.contact and message.contact.phone_number:
         contact = message.contact.phone_number
     else:
@@ -22,7 +22,6 @@ async def receive_contact(message: Message):
         return
 
     async with AsyncSessionLocal() as session:
-        # Получаем пользователя из базы
         user = await session.get(User, user_id)
         if not user:
             await bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте снова.")
@@ -30,7 +29,7 @@ async def receive_contact(message: Message):
 
         user.phone = contact
 
-        # Создаем заявку в базе
+        # Создаем заявку
         r = Request(
             user_id=user.telegram_id,
             request_type="contact",
@@ -39,7 +38,7 @@ async def receive_contact(message: Message):
         session.add(r)
         await session.commit()
 
-        # Формируем текст заявки для владельцев
+        # Формируем текст для владельцев (Анны)
         text = (
             "📋 Заявка\n\n"
             f"👤 Пользователь: {user.first_name or ''} {user.last_name or ''}\n"
@@ -62,7 +61,7 @@ async def receive_contact(message: Message):
     # Сообщение пользователю
     await bot.send_message(
         message.chat.id,
-        "Спасибо! 💛\nАнна свяжется с вами в ближайшее время."
+        "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время."
     )
 
     # Очистка состояния
