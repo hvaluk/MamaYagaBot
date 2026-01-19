@@ -7,6 +7,7 @@ from src.keyboards.inline_kb import experience_kb
 from src.texts.common import ASK_EXPERIENCE
 from src.states import set_state, get_state, UserState
 
+
 TERM_MAP = {
     "term_0_12": "до 12 недель",
     "term_12_29": "12–29 недель",

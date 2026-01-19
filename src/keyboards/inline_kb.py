@@ -1,15 +1,18 @@
 # src/keyboards/inline_kb.py
 
 from telebot import types
-from src.config import SITE, COURSE_PAY_LINK, TRIAL_LECT, TRIAL_VIDEO
+from src.config import  COURSE_PAY_LINK, TRIAL_LECT, TRIAL_VIDEO
 
 # Главная клавиатура после /start
 def main_kb():
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Приступить к занятиям", callback_data="start_course_flow"))
-    kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial"))
-    kb.add(types.InlineKeyboardButton("Подробнее о программе и тарифах", callback_data="flow_info"))
-    return kb
+    markup = types.InlineKeyboardMarkup()
+    btn1 = types.InlineKeyboardButton("Приступить к занятиям", callback_data="start_course_flow")
+    btn2 = types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial")
+    markup.row(btn1, btn2)
+
+    btn3 = types.InlineKeyboardButton("Подробнее о программе и тарифах", callback_data="flow_info")
+    markup.row(btn3)
+    return markup
 
 # Выбор срока беременности
 def pregnancy_kb():

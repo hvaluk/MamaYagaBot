@@ -1,5 +1,4 @@
 
-
 # src/handlers/course/contra.py
 
 from telebot.types import CallbackQuery

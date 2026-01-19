@@ -35,7 +35,10 @@ def parse_int(value, default=0):
         return int(value)
     except (TypeError, ValueError):
         return default
-    
+
+ONLINE_GROUP_PRICE_BYN = parse_int(os.getenv("ONLINE_GROUP_PRICE_BYN", ""))
+ONLINE_GROUP_PRICE_EUR = parse_int(os.getenv("ONLINE_GROUP_PRICE_EUR", ""))
+
 COURSE_PRICE_BYN = parse_int(os.getenv("COURSE_PRICE_BYN", ""))
 COURSE_PRICE_EUR = parse_int(os.getenv("COURSE_PRICE_EUR", ""))
 

@@ -1,23 +1,25 @@
 # src/handlers/course/contact.py
 
 from telebot.types import Message
+from sqlalchemy import select, desc
+
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
-from src.states import get_state, clear_state, UserState
+from src.states import get_state, set_state, UserState
 from src.config import OWNER_IDS
 from src.utils.humanize import humanize, TERM_MAP, EXP_MAP, CONTRA_MAP, FORMAT_MAP
+
 
 @bot.message_handler(func=lambda m: get_state(m.from_user.id) == UserState.COURSE_CONTACT)
 async def receive_contact(message: Message):
     user_id = message.from_user.id
 
-    # Получаем контакт
     if message.contact and message.contact.phone_number:
         contact = message.contact.phone_number
     else:
         contact = (message.text or "").strip()
 
-    if not contact:
+    if not contact or len(contact) < 3:
         await bot.send_message(message.chat.id, "Пожалуйста, отправьте телефон или Telegram 💛")
         return
 
@@ -29,16 +31,28 @@ async def receive_contact(message: Message):
 
         user.phone = contact
 
-        # Создаем заявку
-        r = Request(
+        contact_request = Request(
             user_id=user.telegram_id,
             request_type="contact",
             payload=contact
         )
-        session.add(r)
+        session.add(contact_request)
+
+        # 🔹 получаем последний выбранный формат
+        result = await session.execute(
+            select(Request)
+            .where(
+                Request.user_id == user.telegram_id,
+                Request.request_type == "format_chosen"
+            )
+            .order_by(desc(Request.created_at))
+            .limit(1)
+        )
+        format_request = result.scalar_one_or_none()
+        format_value = format_request.format_chosen if format_request else None
+
         await session.commit()
 
-        # Формируем текст для владельцев (Анны)
         text = (
             "📋 Заявка\n\n"
             f"👤 Пользователь: {user.first_name or ''} {user.last_name or ''}\n"
@@ -46,23 +60,20 @@ async def receive_contact(message: Message):
             f"🤰 Срок: {humanize(user.pregnancy_term, TERM_MAP)}\n"
             f"🧘 Опыт: {humanize(user.yoga_experience, EXP_MAP)}\n"
             f"⚠️ Противопоказания: {humanize(user.contraindications, CONTRA_MAP)}\n"
-            f"📚 Формат: {humanize(r.format_chosen, FORMAT_MAP)}\n"
+            f"📚 Формат: {humanize(format_value, FORMAT_MAP)}\n"
             f"📞 Контакт: {user.phone or '—'}\n\n"
-            f"🕒 {r.created_at.strftime('%d.%m %H:%M')}"
+            f"🕒 {contact_request.created_at.strftime('%d.%m %H:%M')}"
         )
 
-    # Безопасная отправка каждому владельцу
     for owner_id in OWNER_IDS:
         try:
             await bot.send_message(owner_id, text)
         except Exception as e:
             print(f"Не удалось отправить владельцу {owner_id}: {e}")
 
-    # Сообщение пользователю
     await bot.send_message(
         message.chat.id,
         "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время."
     )
 
-    # Очистка состояния
-    clear_state(user_id)
+    set_state(user_id, UserState.NONE)

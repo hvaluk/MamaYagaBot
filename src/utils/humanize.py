@@ -20,7 +20,7 @@ CONTRA_MAP = {
 }
 
 FORMAT_MAP = {
-    "fmt_course": "Комплексный курс",
+    "fmt_course": "Йога онлайн в группе",
     "fmt_individual": "Индивидуальные занятия",
     "fmt_consult": "Консультация онлайн",
 }

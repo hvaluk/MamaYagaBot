@@ -7,6 +7,7 @@ from src.keyboards.inline_kb import contra_kb
 from src.texts.common import SAFE_TEXT_EXPERIENCED
 from src.states import set_state, get_state, UserState
 
+
 EXP_MAP = {
     "exp_none": "нет",
     "exp_some": "немного",
