@@ -5,6 +5,7 @@ from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, User, Request
 from src.keyboards.inline_kb import formats_kb
+from src.keyboards.reply_kb import contact_request_kb
 from src.texts.common import CONTRA_TEXT, FORMAT_TEXT
 from src.states import set_state, UserState, get_state
 
@@ -33,5 +34,11 @@ async def course_contra(call: CallbackQuery):
         set_state(user_id, UserState.COURSE_FORMAT)
         await bot.send_message(call.message.chat.id, FORMAT_TEXT, reply_markup=formats_kb())
     else:
+        # Пользователь выбирает "есть противопоказания"
         set_state(user_id, UserState.COURSE_CONTACT)
-        await bot.send_message(call.message.chat.id, CONTRA_TEXT)
+
+        await bot.send_message(
+            call.message.chat.id,
+            CONTRA_TEXT + "\n\nНапиши, пожалуйста, свой Telegram или номер телефона для связи с Анной 💛",
+            reply_markup=contact_request_kb()
+        )

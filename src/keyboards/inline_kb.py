@@ -39,12 +39,6 @@ def contra_kb():
     kb.add(types.InlineKeyboardButton("Я не уверена", callback_data="contra_unsure"))
     return kb
 
-# Просим оставить контакт при противопоказаниях
-def leave_contact_kb():
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Оставить контакт", callback_data="leave_contact"))
-    return kb
-
 # Выбор формата курса после противопоказаний или опыта
 def formats_kb():
     kb = types.InlineKeyboardMarkup()

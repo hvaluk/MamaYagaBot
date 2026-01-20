@@ -11,3 +11,4 @@ from src.handlers.course.contact import *
 from src.handlers.course.formats import *
 from src.handlers.course.course_info import *
 from src.handlers.course.back import *
+from src.handlers.course.leave_contact import *

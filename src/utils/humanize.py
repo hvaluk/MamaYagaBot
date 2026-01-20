@@ -23,6 +23,7 @@ FORMAT_MAP = {
     "fmt_course": "Йога онлайн в группе",
     "fmt_individual": "Индивидуальные занятия",
     "fmt_consult": "Консультация онлайн",
+    "not_chosen": "Не выбран"
 }
 
 
