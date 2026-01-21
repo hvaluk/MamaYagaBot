@@ -3,11 +3,11 @@
 
 from telebot.types import CallbackQuery
 from src.common import bot
-from src.dao.models import AsyncSessionLocal, User, Request
+from src.dao.models import AsyncSessionLocal, Application
 from src.keyboards.inline_kb import formats_kb
 from src.keyboards.reply_kb import contact_request_kb
 from src.texts.common import CONTRA_TEXT, FORMAT_TEXT
-from src.states import set_state, UserState, get_state
+from src.states import set_state, get_state, get_context, UserState
 
 @bot.callback_query_handler(
     func=lambda c: c.data.startswith("contra_")
@@ -15,28 +15,31 @@ from src.states import set_state, UserState, get_state
 )
 async def course_contra(call: CallbackQuery):
     await bot.answer_callback_query(call.id)
-
     user_id = call.from_user.id
     value = call.data
+    ctx = get_context(user_id)
 
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, user_id)
-        user.contraindications = value
+        application = await session.get(Application, ctx["application_id"])
+        application.contraindications = value
 
-        session.add(Request(
-            user_id=user.telegram_id,
-            request_type="contraindications",
-            payload=value
-        ))
+        if value != "contra_ok":
+            application.format = "contra"
+            application.current_step = "COURSE_CONTACT"
+            set_state(user_id, UserState.COURSE_CONTACT)
+        else:
+            application.current_step = "COURSE_FORMAT"
+            set_state(user_id, UserState.COURSE_FORMAT)
+
         await session.commit()
 
     if value == "contra_ok":
-        set_state(user_id, UserState.COURSE_FORMAT)
-        await bot.send_message(call.message.chat.id, FORMAT_TEXT, reply_markup=formats_kb())
+        await bot.send_message(
+            call.message.chat.id,
+            FORMAT_TEXT,
+            reply_markup=formats_kb()
+        )
     else:
-        # Пользователь выбирает "есть противопоказания"
-        set_state(user_id, UserState.COURSE_CONTACT)
-
         await bot.send_message(
             call.message.chat.id,
             CONTRA_TEXT + "\n\nНапиши, пожалуйста, свой Telegram или номер телефона для связи с Анной 💛",

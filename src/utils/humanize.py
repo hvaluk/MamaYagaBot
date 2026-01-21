@@ -28,6 +28,12 @@ FORMAT_MAP = {
 
 
 def humanize(value: str | None, mapping: dict) -> str:
+    """
+    Преобразует кодовое значение в человекочитаемую строку по словарю mapping.
+    Для FORMAT_MAP: если значение "contra" или None -> "Не выбран"
+    """
     if not value:
         return "—"
+    if mapping is FORMAT_MAP and value in ("contra", None):
+        return "Не выбран"
     return mapping.get(value, value)

@@ -14,5 +14,8 @@
    python3 main.py
 
 ## Alembic migrations
+Create new table
+   alembic revision --autogenerate -m "Add Name table"
+
 From project root:
    alembic -c alembic.ini upgrade head

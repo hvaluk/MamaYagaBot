@@ -1,8 +1,7 @@
 # src/handlers/course/formats.py
 
-
 from telebot import types
-from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import (
     formats_kb,
@@ -19,9 +18,10 @@ from src.texts.course import (
     INDIVIDUAL_CLASS_CONSULT_TEXT,
     CONTACT_REQUEST
 )
-from src.states import get_state, set_state, UserState
-from src.dao.models import AsyncSessionLocal, User, Request
+from src.states import get_state, set_state, get_context, UserState
+from src.dao.models import AsyncSessionLocal, Application
 from src.config import ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR
+
 
 # ---------------- 1️⃣ Выбор формата ----------------
 @bot.callback_query_handler(
@@ -30,22 +30,14 @@ from src.config import ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR
 )
 async def choose_format(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
+
     user_id = callback.from_user.id
     chat_id = callback.message.chat.id
+    ctx = get_context(user_id)
 
     async with AsyncSessionLocal() as session:
-        user = await session.get(User, user_id)
-        if not user:
-            await bot.send_message(chat_id, "Произошла ошибка. Попробуйте снова.")
-            return
-        session.add(
-            Request(
-                user_id=user.telegram_id,
-                request_type="format_chosen",
-                format_chosen=callback.data,
-                payload=callback.data
-            )
-        )
+        application = await session.get(Application, ctx["application_id"])
+        application.format = callback.data
         await session.commit()
 
     # ---------------- Йога онлайн ----------------
@@ -61,7 +53,7 @@ async def choose_format(callback: CallbackQuery):
     elif callback.data == "fmt_individual":
         set_state(user_id, UserState.COURSE_CONTACT)
         text = "Отлично! Ты выбрала индивидуальное занятие.\n\nЧто дальше?"
-        kb = individual_options_kb()  
+        kb = individual_options_kb()
 
     # ---------------- Консультация ----------------
     else:  # fmt_consult
@@ -71,11 +63,17 @@ async def choose_format(callback: CallbackQuery):
 
     await bot.send_message(chat_id, text, reply_markup=kb)
 
+
 # ---------------- 2️⃣ Подробности курса (Йога онлайн) ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "course_info")
 async def course_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
-    await bot.send_message(callback.message.chat.id, ONLINE_GROUP_CLASS_DESC, reply_markup=course_info_kb())
+    await bot.send_message(
+        callback.message.chat.id,
+        ONLINE_GROUP_CLASS_DESC,
+        reply_markup=course_info_kb()
+    )
+
 
 # ---------------- 3️⃣ Начать индивидуальное занятие ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_individual")
@@ -120,10 +118,8 @@ async def individual_info(callback: CallbackQuery):
 async def trial_lesson(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
     from src.texts.common import TRIAL_OFFER
-    await bot.send_message(callback.message.chat.id, TRIAL_OFFER, reply_markup=trial_lesson_kb())
-
-# ---------------- 6️⃣ Отправка контакта ----------------
-@bot.callback_query_handler(func=lambda c: c.data == "contact_request")
-async def send_contact_request(callback: CallbackQuery):
-    await bot.answer_callback_query(callback.id)
-    await bot.send_message(callback.message.chat.id, CONTACT_REQUEST, reply_markup=contact_request_kb())
+    await bot.send_message(
+        callback.message.chat.id,
+        TRIAL_OFFER,
+        reply_markup=trial_lesson_kb()
+    )
