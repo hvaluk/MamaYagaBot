@@ -4,7 +4,7 @@ from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, Application
 from src.keyboards.inline_kb import contra_kb
-from src.texts.common import SAFE_TEXT_EXPERIENCED
+from src.texts.common import SAFE_TEXT_EXPERIENCED, SAFE_TEXT
 from src.states import set_state, get_state, get_context, UserState
 
 EXP_MAP = {
@@ -20,7 +20,7 @@ EXP_MAP = {
 async def course_experience(call: CallbackQuery):
     await bot.answer_callback_query(call.id)
     user_id = call.from_user.id
-    value = EXP_MAP[call.data]
+    value = EXP_MAP[call.data]  
     ctx = get_context(user_id)
 
     async with AsyncSessionLocal() as session:
@@ -31,8 +31,16 @@ async def course_experience(call: CallbackQuery):
 
     set_state(user_id, UserState.COURSE_CONTRA)
 
-    await bot.send_message(
-        call.message.chat.id,
-        SAFE_TEXT_EXPERIENCED,
-        reply_markup=contra_kb()
-    )
+ 
+    if value in ["нет", "немного"]:
+        await bot.send_message(
+            call.message.chat.id,
+            SAFE_TEXT,
+            reply_markup=contra_kb()
+        )
+    elif value == "регулярно":
+        await bot.send_message(
+            call.message.chat.id,
+            SAFE_TEXT_EXPERIENCED,
+            reply_markup=contra_kb()
+        )

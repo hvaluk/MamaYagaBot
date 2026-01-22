@@ -7,7 +7,7 @@ from src.config import COURSE_PAY_LINK, TRIAL_LECT, TRIAL_VIDEO
 def main_kb():
     markup = types.InlineKeyboardMarkup()
     btn1 = types.InlineKeyboardButton("Записаться", callback_data="start_course_flow")
-    btn2 = types.InlineKeyboardButton("Пробный урок", callback_data="flow_trial")
+    btn2 = types.InlineKeyboardButton("Пробный урок", callback_data="flow_trial_start")
     markup.row(btn1, btn2)
 
     btn3 = types.InlineKeyboardButton("Подробнее о программе и тарифах", callback_data="flow_info")

@@ -65,8 +65,8 @@ async def choose_format(callback: CallbackQuery):
 
 
 # ---------------- 2️⃣ Подробности курса (Йога онлайн) ----------------
-@bot.callback_query_handler(func=lambda c: c.data == "course_info")
-async def course_info(callback: CallbackQuery):
+@bot.callback_query_handler(func=lambda c: c.data == "flow_course_info")
+async def cflow_course_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
     await bot.send_message(
         callback.message.chat.id,

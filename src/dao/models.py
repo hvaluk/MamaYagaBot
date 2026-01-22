@@ -46,19 +46,32 @@ class Application(Base):
     __tablename__ = "applications"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.telegram_id"))
+    user_id = Column(Integer, ForeignKey("users.telegram_id"), nullable=False)
 
-    format = Column(String, nullable=True)  # fmt_course / fmt_individual / fmt_consult / contra
+    # entry point
+    entry_point = Column(String, nullable=False, default="course")  # course | trial
+
+    is_trial = Column(Boolean, default=False)
+
+    # анкета
     pregnancy_term = Column(String, nullable=True)
     yoga_experience = Column(String, nullable=True)
     contraindications = Column(String, nullable=True)
+    format = Column(String, nullable=True)
     contact = Column(String, nullable=True)
 
-    status = Column(String, default="new")  # new / done / rejected
-    current_step = Column(String, default="COURSE_TERM")  # <-- новое поле
+    # trial / follow-up
+    trial_opened_at = Column(DateTime, nullable=True)
+    followup_1_sent = Column(Boolean, default=False)
+    followup_2_sent = Column(Boolean, default=False)
+
+    # workflow
+    status = Column(String, default="new")  # new | done | rejected
+    current_step = Column(String, default="COURSE_TERM")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="applications")
+
 
 
 class Request(Base):

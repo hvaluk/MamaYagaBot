@@ -18,6 +18,7 @@ async def course_contra(call: CallbackQuery):
     user_id = call.from_user.id
     value = call.data
     ctx = get_context(user_id)
+    trial_flow = ctx.get("trial_flow", False)
 
     async with AsyncSessionLocal() as session:
         application = await session.get(Application, ctx["application_id"])
@@ -33,13 +34,32 @@ async def course_contra(call: CallbackQuery):
 
         await session.commit()
 
+    # ---------------- Отправка сообщений ----------------
     if value == "contra_ok":
-        await bot.send_message(
-            call.message.chat.id,
-            FORMAT_TEXT,
-            reply_markup=formats_kb()
-        )
+        if trial_flow:
+            # Показываем пробный урок
+            from src.keyboards.inline_kb import trial_lesson_kb
+            from src.texts.common import TRIAL_OFFER
+
+            await bot.send_message(
+                call.message.chat.id,
+                TRIAL_OFFER,
+                reply_markup=trial_lesson_kb()
+            )
+        else:
+            # Показываем форматы курса
+            from src.keyboards.inline_kb import formats_kb
+            from src.texts.common import FORMAT_TEXT
+
+            await bot.send_message(
+                call.message.chat.id,
+                FORMAT_TEXT,
+                reply_markup=formats_kb()
+            )
     else:
+        from src.keyboards.reply_kb import contact_request_kb
+        from src.texts.common import CONTRA_TEXT
+
         await bot.send_message(
             call.message.chat.id,
             CONTRA_TEXT + "\n\nНапиши, пожалуйста, свой Telegram или номер телефона для связи с Анной 💛",
