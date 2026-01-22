@@ -20,26 +20,50 @@ def admin_request_kb(app_id: int) -> InlineKeyboardMarkup:
     )
     return kb
 
-# ---------------- Список последних заявок ----------------
+# ---------------- Клавиатура для админ-меню ----------------
+def admin_main_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("📋 Новые заявки", callback_data="admin_requests"))
+    return kb
+
+# ---------------- Обработчик кнопки админ-меню ----------------
+@bot.callback_query_handler(func=lambda c: c.data == "admin_requests")
+async def admin_requests_menu(call: CallbackQuery):
+    if not is_admin(call.from_user.id):
+        await bot.answer_callback_query(call.id, "Нет доступа")
+        return
+
+    await bot.answer_callback_query(call.id)  # убрать час ожидания
+    await send_new_applications(call.from_user.id)
+
+# ---------------- Команда /requests (только для админа) ----------------
 @bot.message_handler(commands=["requests"])
 async def cmd_requests(message: Message):
     if not is_admin(message.from_user.id):
-        await bot.send_message(message.chat.id, "У вас нет доступа.")
-        return
+        return  # обычным пользователям команда не видна
+    await send_new_applications(message.chat.id)
 
+# ---------------- Функция отправки только новых заявок ----------------
+async def send_new_applications(chat_id: int):
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Application)
+            .where(Application.status == "new")  # только новые
             .order_by(Application.created_at.desc())
-            .limit(20)
         )
         apps = result.scalars().all()
+
+        if not apps:
+            await bot.send_message(chat_id, "Новых заявок нет 📭")
+            return
 
         for app in apps:
             user = await session.get(User, app.user_id)
 
-            # Формат: "Не выбран", если пользователь не дошёл до выбора формата
-            if not app.format or (app.format == "contra") or (app.contraindications in ("contra_yes", "contra_unsure") and app.current_step != "COURSE_FORMAT"):
+            # Формат: "Не выбран", если пользователь не дошёл до выбора формата или есть противопоказания
+            if not app.format or (app.format == "contra") or (
+                app.contraindications in ("contra_yes", "contra_unsure") and app.current_step != "COURSE_FORMAT"
+            ):
                 format_display = "Не выбран"
             else:
                 format_display = humanize(app.format, FORMAT_MAP)
@@ -62,7 +86,7 @@ async def cmd_requests(message: Message):
                 f"Статус: {app.status}"
             )
 
-            await bot.send_message(message.chat.id, text, reply_markup=admin_request_kb(app.id))
+            await bot.send_message(chat_id, text, reply_markup=admin_request_kb(app.id))
 
 # ---------------- Обновление статуса заявки ----------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("req_"))
