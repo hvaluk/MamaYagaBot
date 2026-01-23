@@ -45,7 +45,7 @@ def formats_kb():
     kb.add(types.InlineKeyboardButton("Йога онлайн в группе", callback_data="fmt_course"))
     kb.add(types.InlineKeyboardButton("Индивидуальные занятия онлайн", callback_data="fmt_individual"))
     kb.add(types.InlineKeyboardButton("Консультация онлайн", callback_data="fmt_consult"))
-    kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu"))
+    # kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_formats"))
     return kb
 
 # ---------------- Опции для Йога онлайн в группе ----------------
@@ -87,12 +87,20 @@ def trial_lesson_kb():
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_formats"))
     return kb
 
-# ---------------- Предоплата ----------------
-def prepayment_kb():
+# ---------------- Подробная информация о курсе (из главного меню) ----------------
+def course_flow_info_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Внести предоплату", url=COURSE_PAY_LINK))
-    kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="flow_info"))
+    kb.add(types.InlineKeyboardButton("Оплатить и начать заниматься", url=COURSE_PAY_LINK))
+    kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial_start"))
+    kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back_formats"))
     return kb
+
+# # ---------------- Предоплата ----------------
+# def prepayment_kb():
+#     kb = types.InlineKeyboardMarkup()
+#     kb.add(types.InlineKeyboardButton("Внести предоплату", url=COURSE_PAY_LINK))
+#     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="flow_info"))
+#     return kb
 
 # ---------------- Отправка контакта ----------------
 def contact_request_kb():  # Используется для индивидуальных занятий и консультации

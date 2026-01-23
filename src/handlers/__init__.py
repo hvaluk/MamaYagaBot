@@ -12,3 +12,4 @@ from src.handlers.course.formats import *
 from src.handlers.course.trial import *
 from src.handlers.course.back import *
 from src.handlers.course.leave_contact import *
+from src.handlers.course.flow_course_info import *
