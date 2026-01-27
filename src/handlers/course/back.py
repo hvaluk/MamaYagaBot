@@ -1,18 +1,43 @@
 # src/handlers/course/back.py
 
-from telebot.types import CallbackQuery
 from src.common import bot
-from src.states import set_state, get_state, UserState
-from src.keyboards.inline_kb import formats_kb
+from src.states import get_state, set_state, get_context, UserState
+from src.keyboards.inline_kb import formats_kb, main_kb
+from src.texts.common import FORMAT_TEXT
+from src.texts.start import HELP_TEXT
 
-@bot.callback_query_handler(
-    func=lambda c: c.data == "back_formats"
-    and get_state(c.from_user.id) in (UserState.COURSE_PAY, UserState.COURSE_CONTACT)
-)
-async def back_to_formats(callback: CallbackQuery):
-    await bot.answer_callback_query(callback.id)
-    user_id = callback.from_user.id
-    chat_id = callback.message.chat.id
 
-    set_state(user_id, UserState.COURSE_FORMAT)
-    await bot.send_message(chat_id, "Выбери формат занятий:", reply_markup=formats_kb())
+async def handle_back(user_id: int, chat_id: int):
+    state = get_state(user_id)
+    ctx = get_context(user_id)
+
+    flow = ctx.get("flow")
+    fmt = ctx.get("format")
+
+    # -------- TRIAL / INFO --------
+    if flow in {"trial", "course_info"}:
+        set_state(user_id, UserState.IDLE)
+        await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())
+        return
+
+    # -------- CONTRA --------
+    if fmt == "contra":
+        set_state(user_id, UserState.IDLE)
+        await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())
+        return
+
+    # -------- CONTACT --------
+    if state == UserState.COURSE_CONTACT:
+        set_state(user_id, UserState.COURSE_FORMAT)
+        await bot.send_message(chat_id, FORMAT_TEXT, reply_markup=formats_kb())
+        return
+
+    # -------- PAY / FORMAT --------
+    if state in {UserState.COURSE_PAY, UserState.COURSE_FORMAT}:
+        set_state(user_id, UserState.COURSE_FORMAT)
+        await bot.send_message(chat_id, FORMAT_TEXT, reply_markup=formats_kb())
+        return
+
+    # -------- FALLBACK --------
+    set_state(user_id, UserState.IDLE)
+    await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())

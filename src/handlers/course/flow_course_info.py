@@ -1,4 +1,4 @@
-# src/handlers/course/start.py
+# src/handlers/course/flow_course_info.py
 
 from telebot.types import CallbackQuery
 from src.common import bot

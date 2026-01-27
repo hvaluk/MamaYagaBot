@@ -1,5 +1,3 @@
-# src/utils/humanize.py
-
 TERM_MAP = {
     "до 12 недель": "До 12 недель",
     "12–29 недель": "12–29 недель",
@@ -32,8 +30,10 @@ def humanize(value: str | None, mapping: dict) -> str:
     Преобразует кодовое значение в человекочитаемую строку по словарю mapping.
     Для FORMAT_MAP: если значение "contra" или None -> "Не выбран"
     """
-    if not value:
+    if value is None:
         return "—"
-    if mapping is FORMAT_MAP and value in ("contra", None):
+    
+    if mapping == FORMAT_MAP and value in ("contra", None):
         return "Не выбран"
+    
     return mapping.get(value, value)

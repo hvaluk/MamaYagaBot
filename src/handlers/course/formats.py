@@ -4,14 +4,14 @@ from telebot import types
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import (
-    formats_kb,
+    individual_info_kb,
     course_options_kb,
     course_info_kb,
     individual_options_kb,
     consult_options_kb,
-    trial_lesson_kb,
-    contact_request_kb
+    trial_lesson_kb
 )
+from src.keyboards.reply_kb import contact_request_kb
 from src.texts.course import (
     ONLINE_GROUP_CLASS_DESC,
     INDIVIDUAL_DESC,
@@ -20,10 +20,11 @@ from src.texts.course import (
 )
 from src.states import get_state, set_state, get_context, UserState
 from src.dao.models import AsyncSessionLocal, Application
+
 from src.config import ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR
 
 
-# ---------------- 1️⃣ Выбор формата ----------------
+# ----------------  Выбор формата ----------------
 @bot.callback_query_handler(
     func=lambda c: c.data.startswith("fmt_")
     and get_state(c.from_user.id) == UserState.COURSE_FORMAT
@@ -44,7 +45,7 @@ async def choose_format(callback: CallbackQuery):
     if callback.data == "fmt_course":
         set_state(user_id, UserState.COURSE_PAY)
         text = (
-            f"Отлично! Ты выбрала Йога онлайн в группе.\n\n"
+            f"Отлично! Ты выбрала Йога онлайн в группе.\n"
             f"Стоимость абонемента: {ONLINE_GROUP_PRICE_BYN} BYN / {ONLINE_GROUP_PRICE_EUR}€ 🔥\n\nЧто дальше?"
         )
         kb = course_options_kb()  # Оплатить, Узнать подробнее, Назад
@@ -52,19 +53,19 @@ async def choose_format(callback: CallbackQuery):
     # ---------------- Индивидуальные занятия ----------------
     elif callback.data == "fmt_individual":
         set_state(user_id, UserState.COURSE_CONTACT)
-        text = "Отлично! Ты выбрала индивидуальное занятие.\n\nЧто дальше?"
+        text = "Отлично! Ты выбрала индивидуальное занятие.\nЧто дальше?"
         kb = individual_options_kb()
 
     # ---------------- Консультация ----------------
     else:  # fmt_consult
         set_state(user_id, UserState.COURSE_CONTACT)
         text = INDIVIDUAL_CLASS_CONSULT_TEXT
-        kb = consult_options_kb()  # Записаться, Пробный урок, Назад
+        kb = consult_options_kb()  
 
     await bot.send_message(chat_id, text, reply_markup=kb)
 
 
-# ---------------- 2️⃣ Подробности курса (Йога онлайн) ----------------
+# ---------------- Подробности курса (Йога онлайн) ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "flow_course_info")
 async def cflow_course_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -75,45 +76,43 @@ async def cflow_course_info(callback: CallbackQuery):
     )
 
 
-# ---------------- 3️⃣ Начать индивидуальное занятие ----------------
+# ---------------- Начать индивидуальное занятие ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_individual")
 async def start_individual(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
 
-    text = (
-        "Отличный выбор!\n\n"
-        + INDIVIDUAL_DESC
-        + CONTACT_REQUEST
-    )
+    text = f"{INDIVIDUAL_DESC}{CONTACT_REQUEST}"
 
     await bot.send_message(
         callback.message.chat.id,
-        text,
-        reply_markup=contact_request_kb()  # 🔹 ReplyKeyboard
+        text, parse_mode='Markdown',
+        reply_markup=contact_request_kb() 
     )
 
 
-# ---------------- 4️⃣ Узнать подробнее для индивидуальных занятий ----------------
+# ----------------  Узнать подробнее для индивидуальных занятий ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "individual_info")
 async def individual_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
 
-    kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("Начать заниматься", callback_data="start_individual"))
-    kb.add(types.InlineKeyboardButton(
-        "Записаться на бесплатное мини-занятие",
-        callback_data="flow_trial"
-    ))
-    kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="fmt_individual"))
-
     await bot.send_message(
         callback.message.chat.id,
-        INDIVIDUAL_DESC + CONTACT_REQUEST,
-        reply_markup=kb
+        f"{INDIVIDUAL_DESC}{CONTACT_REQUEST}",
+        parse_mode='Markdown',
+        reply_markup=individual_info_kb()
     )
 
-
-# ---------------- 5️⃣ Пробный урок ----------------
+# ----------------  Записаться на консультацию ----------------
+@bot.callback_query_handler(func=lambda c: c.data == "start_consultation")
+async def start_consultation(callback: CallbackQuery):
+    await bot.answer_callback_query(callback.id)
+    await bot.send_message(
+        callback.message.chat.id,
+        CONTACT_REQUEST,
+        parse_mode='Markdown',
+        reply_markup=contact_request_kb()
+    )
+# ----------------  Пробный урок ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "flow_trial")
 async def trial_lesson(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
