@@ -1,7 +1,7 @@
 # src/texts/common.py
 
 from src.config import (
-    COURSE_PRICE_BYN, COURSE_PRICE_EUR, ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR,
+    COURSE_PAY_LINK, COURSE_PRICE_BYN, COURSE_PRICE_EUR, ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR,
     PREPAYMENT_BYN, PREPAYMENT_EUR,
     REST_PRICE_BYN, REST_PRICE_EUR,
     PROMO_TERM_FOLLOWUP
@@ -75,4 +75,18 @@ ERROR_TEXT = (
 END_TEXT = (
     f"Спасибо, что выбрала путь заботы о себе.\n"
     f"Если что-то понадобится — я рядом."
+)
+
+PAYMENT_MESSAGE = ( 
+    f"✨ Ты почти у цели\n\n"
+    f"Чтобы начать занятия, перейди по ссылке ниже и оплати участие 💛\n\n"
+    f"{COURSE_PAY_LINK}\n"
+    f"После оплаты обязательно вернись в бот и нажми кнопку «Я оплатила»."
+)
+
+
+
+PAYMENT_THANKS = (
+    f"Спасибо, что выбрала путь заботы о себе 💛\n"
+    f"Я передала информацию, скоро мы свяжемся с тобой 🌿"
 )

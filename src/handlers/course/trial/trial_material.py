@@ -1,4 +1,4 @@
-# src/handlers/course/trial_material.py
+# src/handlers/course/trial/trial_material.py
 
 import asyncio
 from datetime import datetime, timezone

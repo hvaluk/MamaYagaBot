@@ -1,11 +1,10 @@
-# src/handlers/course/trial.py
+# src/handlers/course/trial/trial.py
 
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import pregnancy_kb
 from src.texts.common import ASK_TERM
 from src.states import set_context, set_state, UserState
-
 
 @bot.callback_query_handler(func=lambda c: c.data == "flow_trial_start")
 async def start_trial_flow(call: CallbackQuery):

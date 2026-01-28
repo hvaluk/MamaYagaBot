@@ -1,4 +1,4 @@
-# src/handlers/course/remind_later.py
+# src/handlers/course/trial/remind_later.py
 
 import asyncio
 from telebot.types import CallbackQuery
