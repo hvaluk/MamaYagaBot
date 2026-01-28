@@ -15,3 +15,5 @@ from src.handlers.course.leave_contact import *
 from src.handlers.course.flow_course_info import *
 from src.handlers.course.back_button.back_inline import *
 from src.handlers.course.back_button.back_reply import *
+from src.handlers.course.remind_later import *
+from src.handlers.course.trial_material import *

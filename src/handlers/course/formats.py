@@ -1,5 +1,6 @@
 # src/handlers/course/formats.py
 
+import asyncio
 from telebot import types
 from telebot.types import CallbackQuery
 from src.common import bot
@@ -9,7 +10,9 @@ from src.keyboards.inline_kb import (
     course_info_kb,
     individual_options_kb,
     consult_options_kb,
-    trial_lesson_kb
+    trial_lesson_kb,
+    followup_60min_kb,
+    followup_24h_kb
 )
 from src.keyboards.reply_kb import contact_request_kb
 from src.texts.course import (
@@ -20,8 +23,9 @@ from src.texts.course import (
 )
 from src.states import get_state, set_state, get_context, UserState
 from src.dao.models import AsyncSessionLocal, Application
-
 from src.config import ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR
+from src.utils.followup import schedule_followup
+from src.texts.common import TRIAL_OFFER, FOLLOWUP_FIRST, FOLLOWUP_24H
 
 
 # ----------------  Выбор формата ----------------
@@ -116,9 +120,39 @@ async def start_consultation(callback: CallbackQuery):
 @bot.callback_query_handler(func=lambda c: c.data == "flow_trial")
 async def trial_lesson(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
-    from src.texts.common import TRIAL_OFFER
+
+    # Отправляем пробный урок
     await bot.send_message(
         callback.message.chat.id,
         TRIAL_OFFER,
         reply_markup=trial_lesson_kb()
     )
+
+    # ---------- follow-up через 60 минут ----------
+    asyncio.create_task(schedule_followup(
+        user_id=callback.from_user.id,
+        text=FOLLOWUP_FIRST,
+        kb=followup_60min_kb(),
+        delay_seconds=60 * 60  # 60 минут
+    ))
+
+    # ---------- follow-up через 24 часа ----------
+    asyncio.create_task(schedule_followup(
+        user_id=callback.from_user.id,
+        text=FOLLOWUP_24H,
+        kb=followup_24h_kb(),
+        delay_seconds=24 * 60 * 60  # 24 часа
+    ))
+
+# ----------------  Напомни позже ----------------
+@bot.callback_query_handler(func=lambda c: c.data == "remind_later")
+async def remind_later(callback: CallbackQuery):
+    await bot.answer_callback_query(callback.id, "Хорошо, напомню через 3 дня 🕒")
+
+    # follow-up через 3 дня
+    asyncio.create_task(schedule_followup(
+        user_id=callback.from_user.id,
+        text=FOLLOWUP_24H,
+        kb=followup_24h_kb(),
+        delay_seconds=3 * 24 * 60 * 60  # 3 дня
+    ))

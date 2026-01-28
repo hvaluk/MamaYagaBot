@@ -1,7 +1,7 @@
 # src/keyboards/inline_kb.py
 
 from telebot import types
-from src.config import COURSE_PAY_LINK, TRIAL_LECT, TRIAL_VIDEO
+from src.config import COURSE_PAY_LINK
 
 
 # ---------------- Главная клавиатура после /start ----------------
@@ -108,8 +108,8 @@ def consult_options_kb():
 # ---------------- Пробный урок ----------------
 def trial_lesson_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("🎥 Видео-урок йоги", url=TRIAL_VIDEO))
-    kb.add(types.InlineKeyboardButton("🎧 Лекция «Подготовка к родам»", url=TRIAL_LECT))
+    kb.add(types.InlineKeyboardButton("🎥 Видео-урок йоги", callback_data="trial_video"))
+    kb.add(types.InlineKeyboardButton("🎧 Лекция «Подготовка к родам»", callback_data="trial_lect"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 
@@ -120,4 +120,23 @@ def course_flow_info_kb():
     kb.add(types.InlineKeyboardButton("Оплатить и начать заниматься", url=COURSE_PAY_LINK))
     kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial_start"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
+    return kb
+
+
+
+def followup_60min_kb():
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton("🔹Оплатить и начать заниматься", url=COURSE_PAY_LINK),
+        types.InlineKeyboardButton("🔹Подробнее о программе и тарифах", callback_data="flow_info")
+    )
+    return kb
+
+def followup_24h_kb():  
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton("🔸Хочу записаться на курс", url=COURSE_PAY_LINK),
+        types.InlineKeyboardButton("🔸Есть вопросы", callback_data="contact_request"),
+        types.InlineKeyboardButton("🔸Напомни позже", callback_data="remind_later")
+    )
     return kb
