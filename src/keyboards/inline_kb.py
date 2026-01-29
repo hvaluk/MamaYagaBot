@@ -139,11 +139,15 @@ def followup_60min_kb():
     )
     return kb
 
-def followup_24h_kb():  
+def followup_24h_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(
-        types.InlineKeyboardButton("🔸Хочу записаться на курс", callback_data="pay_course"),
-        types.InlineKeyboardButton("🔸Есть вопросы", callback_data="contact_request"),
-        types.InlineKeyboardButton("🔸Напомни позже", callback_data="remind_later")
-    )
+    kb.add(types.InlineKeyboardButton("🔸Хочу записаться на курс", callback_data="pay_course"))
+    kb.add(types.InlineKeyboardButton("🔸Есть вопросы", callback_data="leave_contact"))
+    kb.add(types.InlineKeyboardButton("🔸Напомни позже", callback_data="remind_later"))
+    return kb
+
+def followup_3days_kb():
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton("Записаться на курс", callback_data="pay_course"))
+    kb.add(types.InlineKeyboardButton("Есть вопросы", callback_data="leave_contact"))
     return kb
