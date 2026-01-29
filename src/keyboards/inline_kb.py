@@ -69,7 +69,7 @@ def course_options_kb():
 def course_info_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Оплатить и начать заниматься", callback_data="pay_course"))
-    kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial"))
+    kb.add(types.InlineKeyboardButton("Пройти пробный мини-курс", callback_data="flow_trial"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 
@@ -88,7 +88,7 @@ def individual_info_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Начать заниматься", callback_data="start_individual"))
     kb.add(types.InlineKeyboardButton(
-        "Записаться на бесплатное мини-занятие",
+        "Пройти пробный мини-курс",
         callback_data="flow_trial"
     ))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
@@ -99,16 +99,15 @@ def individual_info_kb():
 def consult_options_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Записаться", callback_data="start_consultation"))
-    kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial"))
+    kb.add(types.InlineKeyboardButton("Пройти пробный мини-курс", callback_data="flow_trial"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 
 
-# ---------------- Пробный урок ----------------
+# ---------------- Пробный мини-курс ----------------
 def trial_lesson_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton("🎥 Видео-урок йоги", callback_data="trial_video"))
-    kb.add(types.InlineKeyboardButton("🎧 Лекция «Подготовка к родам»", callback_data="trial_lect"))
+    kb.add(types.InlineKeyboardButton("Мини-курс «Подготовка к родам»", callback_data="trial_lect"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 
@@ -117,7 +116,7 @@ def trial_lesson_kb():
 def course_flow_info_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Оплатить и начать заниматься", callback_data="pay_course"))
-    kb.add(types.InlineKeyboardButton("Пройти пробный урок", callback_data="flow_trial_start"))
+    kb.add(types.InlineKeyboardButton("Пройти пробный мини-курс", callback_data="flow_trial_start"))
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 

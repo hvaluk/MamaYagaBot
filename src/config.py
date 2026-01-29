@@ -23,8 +23,8 @@ DATABASE_URL = os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_
 
 # --- Links & Course ---
 PAY_LINK = os.getenv("PAY_LINK", "")
-TRIAL_VIDEO = os.getenv("TRIAL_VIDEO", "")
-TRIAL_LECT = os.getenv("TRIAL_LECT", "")
+
+TRIAL_MINI_COURSE = os.getenv("TRIAL_MINI_COURSE", "")
 SITE = os.getenv("SITE", "")
 COURSE_PAY_LINK = os.getenv("COURSE_PAY_LINK", "")
 
@@ -54,14 +54,6 @@ SUBSCRIPTION_4_CLASSES_PRICE_EUR = parse_int(os.getenv("SUBSCRIPTION_4_CLASSES_P
 SUBSCRIPTION_8_CLASSES_PRICE_BYN = parse_int(os.getenv("SUBSCRIPTION_8_CLASSES_PRICE_BYN", ""))
 SUBSCRIPTION_8_CLASSES_PRICE_EUR = parse_int(os.getenv("SUBSCRIPTION_8_CLASSES_PRICE_EUR", ""))
 
-# --- Promo ---
-PROMO_TERM = os.getenv("PROMO_TERM", "")
-PROMO_TERM_FOLLOWUP = os.getenv("PROMO_TERM_FOLLOWUP", "")
-
-PREPAYMENT_BYN = parse_int(os.getenv("PREPAYMENT_BYN", ""))
-PREPAYMENT_EUR = parse_int(os.getenv("PREPAYMENT_EUR", ""))
-REST_PRICE_BYN = parse_int(os.getenv("REST_PRICE_BYN", ""))
-REST_PRICE_EUR = parse_int(os.getenv("REST_PRICE_EUR", ""))
 
 # --- Worker ---
-FOLLOWUP_CHECK_INTERVAL = int(os.getenv("FOLLOWUP_CHECK_INTERVAL", "3600"))
+FOLLOWUP_CHECK_INTERVAL = int(os.getenv("FOLLOWUP_CHECK_INTERVAL", "10"))
