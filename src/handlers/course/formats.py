@@ -22,7 +22,7 @@ from src.dao.models import AsyncSessionLocal, Application
 from src.config import ONLINE_GROUP_PRICE_BYN, ONLINE_GROUP_PRICE_EUR
 
 
-# ---------------- Выбор формата занятий ----------------
+# ---------------- Select class format ----------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("fmt_"))
 async def choose_format(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -38,7 +38,7 @@ async def choose_format(callback: CallbackQuery):
             await bot.send_message(chat_id, "Произошла ошибка. Давай начнем заново 🙏")
             return
 
-        # Сохраняем выбранный формат
+        # Save the selected format
         if callback.data == "fmt_course":
             application.format = "Йога онлайн"
             set_state(user_id, UserState.COURSE_PAY)
@@ -60,14 +60,14 @@ async def choose_format(callback: CallbackQuery):
             text = INDIVIDUAL_CLASS_CONSULT_TEXT
             kb = consult_options_kb()
 
-        # Сохраняем выбор формата в контексте для оплаты
+        # Save the selected format in the context for payment
         ctx["selected_format"] = application.format
         await session.commit()
 
     await bot.send_message(chat_id, text, reply_markup=kb)
 
 
-# ---------------- Подробности курса (Йога онлайн) ----------------
+# ---------------- Course details (Online Yoga) ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "flow_course_info")
 async def cflow_course_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -78,7 +78,7 @@ async def cflow_course_info(callback: CallbackQuery):
     )
 
 
-# ---------------- Начало индивидуального занятия ----------------
+# ---------------- Start of individual session ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_individual")
 async def start_individual(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -93,7 +93,7 @@ async def start_individual(callback: CallbackQuery):
     )
 
 
-# ---------------- Подробности индивидуальных занятий ----------------
+# ---------------- Individual session details ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "individual_info")
 async def individual_info(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -105,7 +105,7 @@ async def individual_info(callback: CallbackQuery):
     )
 
 
-# ---------------- Записаться на консультацию ----------------
+# ---------------- Sign up for consultation ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_consultation")
 async def start_consultation(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)

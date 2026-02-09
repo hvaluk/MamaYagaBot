@@ -8,7 +8,7 @@ from src.texts.common import PAYMENT_MESSAGE, PAYMENT_THANKS
 from src.dao.models import AsyncSessionLocal, Application
 from src.states import get_context, clear_state, set_context
 
-# ---------------- Начало оплаты ----------------
+# ---------------- Start payment ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "user:pay_course")
 async def start_payment(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -31,7 +31,7 @@ async def start_payment(callback: CallbackQuery):
             await session.refresh(app)
             set_context(user_id, application_id=app.id)
 
-        # ❗ стопаем follow-up всегда
+        # always stop follow-up
         app.followup_stage = 99
         app.followup_last_sent_at = None
         await session.commit()
@@ -42,7 +42,7 @@ async def start_payment(callback: CallbackQuery):
         reply_markup=payment_confirm_kb()
     )
 
-# ---------------- Подтверждение оплаты ----------------
+# ---------------- Payment confirmation ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "user:paid")
 async def confirm_payment(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -63,7 +63,7 @@ async def confirm_payment(callback: CallbackQuery):
             clear_state(user_id)
             return
 
-        app.status = "paid_pending"  # ожидает подтверждения админом
+        app.status = "paid_pending"  # awaiting admin confirmation
         app.current_step = "PAYMENT_CONFIRMED"
         app.followup_stage = 99
         if not app.format:

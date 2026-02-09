@@ -23,20 +23,20 @@ async def course_term(call: CallbackQuery):
     user_id = call.from_user.id
 
     async with AsyncSessionLocal() as session:
-        # Создаём новую заявку Application
+        # Create a new Application
         application = Application(
             user_id=user_id,
             pregnancy_term=term,
             current_step="COURSE_EXPERIENCE"
         )
         session.add(application)
-        await session.flush()  # получаем id для контекста
+        await session.flush()  # obtain id for context
         await session.commit()
 
-    # Сохраняем application_id в контекст пользователя
+    # Save application_id in the user's context
     set_context(user_id, application_id=application.id)
 
-    # Переходим к следующему шагу — выбор опыта
+    # Move to the next step — choose experience
     set_state(user_id, UserState.COURSE_EXPERIENCE)
 
     await bot.send_message(

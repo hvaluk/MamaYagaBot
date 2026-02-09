@@ -12,7 +12,7 @@ async def ask_contact(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
     user_id = callback.from_user.id
 
-    # фиксируем статус заявки "done", чтобы follow-up не мешал
+    # mark application status as "done" so the follow-up won't interfere
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Application)

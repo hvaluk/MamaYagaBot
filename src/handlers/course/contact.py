@@ -12,12 +12,16 @@ from src.keyboards.reply_kb import contact_request_kb
 
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
 
+
 @bot.message_handler(content_types=["text", "contact"])
 async def receive_contact(message: Message):
+    """
+    Receives and processes user's contact information.
+    """
     user_id = message.from_user.id
     chat_id = message.chat.id
 
-    # проверка состояния
+    # state check
     if get_state(user_id) != UserState.COURSE_CONTACT:
         return
 
@@ -26,7 +30,7 @@ async def receive_contact(message: Message):
         await handle_back(user_id, chat_id)
         return
 
-    # извлечение контакта
+    # contact extraction
     contact: str | None = None
     if message.contact and isinstance(message.contact, Contact):
         contact = message.contact.phone_number
@@ -37,7 +41,7 @@ async def receive_contact(message: Message):
         await bot.send_message(chat_id, "Пожалуйста, отправь номер телефона или Telegram @username 💛")
         return
 
-    # достаем заявку через контекст
+    # retrieve application from context
     ctx = get_context(user_id)
     application_id = ctx.get("application_id")
     if not application_id:
@@ -53,18 +57,21 @@ async def receive_contact(message: Message):
             clear_state(user_id)
             return
 
-        # обновление заявки
+        # application update
         application.contact = contact
         application.current_step = "COURSE_DONE"
         application.status = "done"
         await session.commit()
 
-    # сообщение пользователю
-    await bot.send_message(chat_id, "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время.",
-                           reply_markup=ReplyKeyboardRemove())
+    # user message
+    await bot.send_message(
+        chat_id,
+        "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время.",
+        reply_markup=ReplyKeyboardRemove()
+    )
     clear_state(user_id)
 
-    # уведомление админов
+    # admin notification
     text = (
         f"📋 Заявка #{application.id}\n\n"
         f"👤 Пользователь: {user.first_name or ''} {user.last_name or ''}\n"
@@ -80,4 +87,4 @@ async def receive_contact(message: Message):
         try:
             await bot.send_message(owner_id, text)
         except Exception as e:
-            print(f"Не удалось отправить владельцу {owner_id}: {e}")
+            print(f"Failed to notify owner {owner_id}: {e}")

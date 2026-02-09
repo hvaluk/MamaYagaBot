@@ -4,9 +4,6 @@
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.dao.models import AsyncSessionLocal, Application
-from src.keyboards.inline_kb import formats_kb
-from src.keyboards.reply_kb import contact_request_kb
-from src.texts.common import CONTRA_TEXT, FORMAT_TEXT
 from src.states import set_state, get_state, get_context, UserState
 
 @bot.callback_query_handler(
@@ -34,7 +31,7 @@ async def course_contra(call: CallbackQuery):
 
         await session.commit()
 
-    # ---------------- Отправка сообщений ----------------
+    # ---------------- Sending messages ----------------
     if value == "contra_ok":
         if trial_flow:
             # Показываем пробный урок
@@ -47,7 +44,7 @@ async def course_contra(call: CallbackQuery):
                 reply_markup=trial_lesson_kb()
             )
         else:
-            # Показываем форматы курса
+            # Show course formats
             from src.keyboards.inline_kb import formats_kb
             from src.texts.common import FORMAT_TEXT
 

@@ -8,7 +8,7 @@ from src.utils.followup import followup_worker
 
 async def main():
     print("Bot is running...")
-    # Запускаем воркер follow-up параллельно
+    # Start the follow-up worker concurrently
     asyncio.create_task(followup_worker())
     try:
         await bot.infinity_polling(timeout=10, request_timeout=20)

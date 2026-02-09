@@ -37,8 +37,8 @@ async def followup_worker():
                 delta = now - app.trial_opened_at
                 last_sent = app.followup_last_sent_at or app.trial_opened_at
 
-                # TEST: 1 минута
-                if app.followup_stage == 0 and delta >= timedelta(minutes=1):
+                # PROD: 1 hour
+                if app.followup_stage == 0 and delta >= timedelta(minutes=60):
                     await bot.send_message(
                         app.user_id,
                         FOLLOWUP_FIRST,
@@ -47,8 +47,8 @@ async def followup_worker():
                     app.followup_stage = 1
                     app.followup_last_sent_at = now
 
-                # TEST: 2 минуты
-                elif app.followup_stage == 1 and delta >= timedelta(minutes=2):
+                #  PROD: 24 hours
+                elif app.followup_stage == 1 and delta >= timedelta(hours=24):
                     await bot.send_message(
                         app.user_id,
                         FOLLOWUP_24H,
@@ -59,7 +59,7 @@ async def followup_worker():
 
                 # remind later
                 elif app.followup_stage == 3:
-                    if now - last_sent >= timedelta(minutes=3):
+                    if now - last_sent >= timedelta(days=3):
                         await bot.send_message(
                             app.user_id,
                             FOLLOWUP_24H,

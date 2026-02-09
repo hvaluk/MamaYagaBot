@@ -13,15 +13,11 @@ from src.keyboards.inline_kb import (
 )
 from src.utils.humanize import humanize, FORMAT_MAP, TERM_MAP, EXP_MAP, CONTRA_MAP
 
-# --------------------
-# Helpers
-# --------------------
+# -------------------- Helpers --------------------
 def is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS
 
-# --------------------
-# /admin
-# --------------------
+# -------------------- /admin --------------------
 @bot.message_handler(commands=["admin"])
 async def admin_menu(message: Message):
     if not is_admin(message.from_user.id):
@@ -32,9 +28,7 @@ async def admin_menu(message: Message):
         reply_markup=admin_main_kb()
     )
 
-# --------------------
-# Заявки
-# --------------------
+# -------------------- Applications --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:requests")
 async def admin_applications(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -67,12 +61,10 @@ async def admin_applications(call: CallbackQuery):
                 f"Дата создания: {app.created_at.strftime('%d.%m %H:%M')}\n"
                 f"Статус: {app.status}"
             )
-            # Добавляем кнопки Выполнено / Отклонено
+            # Add Completed / Rejected buttons
             await bot.send_message(call.message.chat.id, text, reply_markup=admin_request_kb(app.id))
 
-# --------------------
-# Действия по заявкам (Выполнено / Отклонено)
-# --------------------
+# -------------------- Actions on applications (Completed / Rejected) --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin:req_"))
 async def admin_request_action(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -102,9 +94,7 @@ async def admin_request_action(call: CallbackQuery):
     )
     await bot.answer_callback_query(call.id, "Статус обновлён")
 
-# --------------------
-# Ожидающие оплаты
-# --------------------
+# -------------------- Pending payments --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:payments")
 async def admin_payments(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -133,12 +123,10 @@ async def admin_payments(call: CallbackQuery):
                 f"Формат: {humanize(app.format, FORMAT_MAP)}\n"
                 f"Дата создания: {app.created_at.strftime('%d.%m %H:%M')}"
             )
-            # Добавляем кнопки Оплачено / Не оплачено
+            # Add Paid / Not paid buttons
             await bot.send_message(call.message.chat.id, text, reply_markup=admin_payment_kb(app.id))
 
-# --------------------
-# Подтверждение / отклонение оплаты
-# --------------------
+# -------------------- Payment confirmation / rejection --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin:paid") or c.data.startswith("admin:not_paid"))
 async def admin_payment_action(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -167,9 +155,7 @@ async def admin_payment_action(call: CallbackQuery):
     )
     await bot.answer_callback_query(call.id, "Статус обновлён")
 
-# --------------------
-# Пользователи (главная кнопка)
-# --------------------
+# -------------------- User management (main button) --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:users")
 async def admin_users(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -181,9 +167,7 @@ async def admin_users(call: CallbackQuery):
         reply_markup=admin_users_filter_kb()
     )
 
-# --------------------
-# Фильтры пользователей
-# --------------------
+# -------------------- User filters --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin_users:"))
 async def admin_users_filter(call: CallbackQuery):
     if not is_admin(call.from_user.id):

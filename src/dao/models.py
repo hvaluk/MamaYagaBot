@@ -23,11 +23,9 @@ DATABASE_URL = os.getenv(
     "sqlite+aiosqlite:///mamayoga_bot.db"
 )
 
-# --------------------
-# Engines
-# --------------------
+# --------------------Engines  --------------------
 
-# async — для бота
+# async — for the bot
 async_engine = create_async_engine(
     DATABASE_URL,
     echo=False,
@@ -39,7 +37,7 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False,
 )
 
-# sync — для alembic
+# sync — for alembic
 engine = create_engine(
     DATABASE_URL.replace("+aiosqlite", ""),
     future=True,
@@ -52,9 +50,7 @@ def utcnow():
     return datetime.utcnow()
 
 
-# --------------------
-# Models
-# --------------------
+# --------------------  Models --------------------
 
 class User(Base):
     __tablename__ = "users"

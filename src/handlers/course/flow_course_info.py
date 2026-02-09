@@ -22,10 +22,10 @@ async def info_clicked(callback):
         app = await get_last_app(session, callback.from_user.id)
 
         if app and app.is_trial and app.followup_stage == 0:
-            app.followup_stage = 1  # пропускаем 60 минут
+            app.followup_stage = 1 
             await session.commit()
 
-    # дальше обычный сценарий
+    # continue with the normal flow
     await bot.send_message(
         callback.message.chat.id,
         ABOUT_PROGRAM,

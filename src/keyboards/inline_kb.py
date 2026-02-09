@@ -2,12 +2,12 @@
 
 from telebot import types
 
-# ---------------- Главная клавиатура после /start ----------------
+# ---------------- Main keyboard after /start ----------------
 def main_kb():
     kb = types.InlineKeyboardMarkup()
     kb.row(
         types.InlineKeyboardButton("Записаться", callback_data="start_course_flow"),
-        types.InlineKeyboardButton("Пробный урок", callback_data="flow_trial_start"),
+        types.InlineKeyboardButton("Пробный мини-курс", callback_data="flow_trial_start"),
     )
     kb.add(
         types.InlineKeyboardButton(
@@ -17,7 +17,7 @@ def main_kb():
     )
     return kb
 
-# ---------------- Выбор срока беременности ----------------
+# ---------------- Pregnancy term selection ----------------
 def pregnancy_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("До 12 недель", callback_data="term_0_12"))
@@ -26,7 +26,7 @@ def pregnancy_kb():
     kb.add(types.InlineKeyboardButton("38+ недель", callback_data="term_38_plus"))
     return kb
 
-# ---------------- Опыт занятий йогой ----------------
+# ---------------- Yoga experience ----------------
 def experience_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Нет, это первый опыт", callback_data="exp_none"))
@@ -34,7 +34,7 @@ def experience_kb():
     kb.add(types.InlineKeyboardButton("Регулярно занимаюсь", callback_data="exp_regular"))
     return kb
 
-# ---------------- Противопоказания ----------------
+# ---------------- Contraindications ----------------
 def contra_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Все хорошо, противопоказаний нет", callback_data="contra_ok"))
@@ -42,7 +42,7 @@ def contra_kb():
     kb.add(types.InlineKeyboardButton("Я не уверена", callback_data="contra_unsure"))
     return kb
 
-# ---------------- Выбор формата курса ----------------
+# ---------------- Course format selection ----------------
 def formats_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Йога онлайн в группе", callback_data="fmt_course"))
@@ -50,7 +50,7 @@ def formats_kb():
     kb.add(types.InlineKeyboardButton("Консультация онлайн", callback_data="fmt_consult"))
     return kb
 
-# ---------------- Опции для Йога онлайн в группе ----------------
+# ---------------- Options for group online yoga ----------------
 def course_options_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("Оплатить и начать заниматься", callback_data="user:pay_course"))
@@ -99,7 +99,7 @@ def course_flow_info_kb():
     kb.add(types.InlineKeyboardButton("🔙 Назад", callback_data="back"))
     return kb
 
-# ---------------- Кнопка оплаты через callback ----------------
+# ---------------- Payment button via callback ----------------
 def payment_confirm_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(
@@ -108,7 +108,7 @@ def payment_confirm_kb():
     )
     return kb
 
-# ---------------- Follow-up клавиатуры ----------------
+# ---------------- Follow-up keyboards ----------------
 def followup_60min_kb():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton("🔹Оплатить и начать заниматься", callback_data="user:pay_course"))
@@ -128,7 +128,7 @@ def followup_3days_kb():
     kb.add(types.InlineKeyboardButton("Есть вопросы", callback_data="leave_contact"))
     return kb
 
-# ---------------- Админские клавиатуры ----------------
+# ---------------- Admin keyboards ----------------
 def admin_request_kb(app_id: int):
     kb = types.InlineKeyboardMarkup()
     kb.add(

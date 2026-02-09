@@ -16,7 +16,6 @@ def parse_ids(ids_str: str):
 ADMIN_IDS = parse_ids(os.getenv("ADMIN_IDS", ""))
 OWNER_IDS = parse_ids(os.getenv("OWNER_IDS", ""))
 
-# ADMIN_IDS = set(int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip())
 
 # --- Database ---
 DATABASE_URL = os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db")
