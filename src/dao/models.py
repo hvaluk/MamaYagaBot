@@ -88,10 +88,10 @@ class Application(Base):
         nullable=False,
     )
 
-    # откуда пришёл
+    # where the user came from
     entry_point = Column(String, default="course")  # course | trial
 
-    # анкета
+    # questionnaire
     pregnancy_term = Column(String, nullable=True)
     yoga_experience = Column(String, nullable=True)
     contraindications = Column(String, nullable=True)
