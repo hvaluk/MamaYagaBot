@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 Base = declarative_base()
@@ -46,8 +46,8 @@ engine = create_engine(
 
 
 def utcnow():
-    """Naive UTC — единый стандарт"""
-    return datetime.utcnow()
+    """Return current UTC time (timezone-aware)"""
+    return datetime.now(timezone.utc)
 
 
 # --------------------  Models --------------------
