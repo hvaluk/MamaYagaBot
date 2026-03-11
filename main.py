@@ -4,12 +4,14 @@ import asyncio
 from src.common import bot
 from src.handlers import *
 from src.utils.followup import followup_worker
+from src.utils.nocodb_sync import nocodb_worker
 
 
 async def main():
     print("Bot is running...")
     # Start the follow-up worker concurrently
     asyncio.create_task(followup_worker())
+    asyncio.create_task(nocodb_worker())
     try:
         await bot.infinity_polling(timeout=10, request_timeout=20)
     except Exception as e:

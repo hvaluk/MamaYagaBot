@@ -1,6 +1,9 @@
+# config.py 
+
 import os
 from dotenv import load_dotenv
-from pyairtable import Table
+import requests
+
 
 load_dotenv()
 
@@ -19,42 +22,62 @@ OWNER_IDS = parse_ids(os.getenv("OWNER_IDS", ""))
 # --- Database ---
 DATABASE_URL = os.getenv("MAMAYOGA_DATABASE_URL", "sqlite+aiosqlite:///mamayoga_bot.db")
 
-# --- Airtable setup ---
-AIRTABLE_TOKEN = os.getenv("AIRTABLE_TOKEN")
-AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
-AIRTABLE_SETTINGS_TABLE = os.getenv("AIRTABLE_SETTINGS_TABLE", "Settings")
+# --- NocoDB setup ---
 
-if not AIRTABLE_TOKEN or not AIRTABLE_BASE_ID:
-    print("⚠️ Airtable keys not set in .env, using .env fallback for dynamic settings.")
-    AIRTABLE_ENABLED = False
+NOCODB_URL = os.getenv("NOCODB_URL")
+NOCODB_TOKEN = os.getenv("NOCODB_TOKEN")
+NOCODB_TABLE_ID = os.getenv("NOCODB_TABLE_ID")
+
+if not NOCODB_URL or not NOCODB_TOKEN or not NOCODB_TABLE_ID:
+    print("⚠️ NocoDB keys not set in .env, using .env fallback.")
+    NOCODB_ENABLED = False
 else:
-    AIRTABLE_ENABLED = True
+    NOCODB_ENABLED = True
 
-def load_airtable_settings():
-    """Load settings from Airtable table, return dict {key: value}"""
-    if not AIRTABLE_ENABLED:
+
+def load_nocodb_settings():
+    """Load settings from NocoDB table → dict {key: value}"""
+
+    if not NOCODB_ENABLED:
         return {}
+
+    url = f"{NOCODB_URL}/api/v2/tables/{NOCODB_TABLE_ID}/records?limit=1000"
+
+    headers = {
+        "xc-token": NOCODB_TOKEN
+    }
+
     try:
-        table = Table(AIRTABLE_TOKEN, AIRTABLE_BASE_ID, AIRTABLE_SETTINGS_TABLE)
-        return {r['fields']['key']: r['fields']['value'] for r in table.all()}
+        r = requests.get(url, headers=headers)
+        r.raise_for_status()
+
+        data = r.json()["list"]
+
+        return {row["key"]: row["value"] for row in data}
+
     except Exception as e:
-        print(f"⚠️ Warning: cannot load settings from Airtable: {e}")
+        print(f"⚠️ Warning: cannot load settings from NocoDB: {e}")
         return {}
 
-AIRTABLE_SETTINGS = load_airtable_settings()
+
+NOCODB_SETTINGS = load_nocodb_settings()
+
 
 def get_setting(key, default=""):
     """
-    Return value from Airtable if available, else from .env, else default
+    Return value from NocoDB if available,
+    else from .env,
+    else default
     """
-    return AIRTABLE_SETTINGS.get(key, os.getenv(key, default))
+    return NOCODB_SETTINGS.get(key, os.getenv(key, default))
+
 
 def parse_int(value, default=0):
     try:
         return int(value)
     except (TypeError, ValueError):
         return default
-
+    
 # --- Links ---
 PAY_LINK = get_setting("PAY_LINK")
 TRIAL_MINI_COURSE = get_setting("TRIAL_MINI_COURSE")
@@ -76,10 +99,11 @@ SUBSCRIPTION_8_CLASSES_PRICE_BYN = parse_int(get_setting("SUBSCRIPTION_8_CLASSES
 SUBSCRIPTION_8_CLASSES_PRICE_EUR = parse_int(get_setting("SUBSCRIPTION_8_CLASSES_PRICE_EUR"))
 
 # --- Worker ---
-FOLLOWUP_CHECK_INTERVAL = int(get_setting("FOLLOWUP_CHECK_INTERVAL", "10"))
+FOLLOWUP_CHECK_INTERVAL = parse_int(get_setting("FOLLOWUP_CHECK_INTERVAL"))
 
 # --- Summary for logs ---
-if AIRTABLE_ENABLED:
-    print("Airtable settings loaded successfully.")
+if NOCODB_ENABLED:
+    print("NocoDB settings loaded successfully.")
 else:
     print("Using .env fallback values only.")
+
