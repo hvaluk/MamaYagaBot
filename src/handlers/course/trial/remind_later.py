@@ -2,30 +2,21 @@
 
 from datetime import datetime, timezone
 from telebot.types import CallbackQuery
-from sqlalchemy import select
 
 from src.common import bot
-from src.dao.models import AsyncSessionLocal, Application
-
-
-async def get_last_app(session, user_id: int):
-    stmt = select(Application).where(Application.user_id == user_id).order_by(Application.id.desc()).limit(1)
-    result = await session.execute(stmt)
-    return result.scalars().first()
-
+from src.utils.state_manager import get_application, update_application
 
 @bot.callback_query_handler(func=lambda c: c.data == "remind_later")
 async def remind_later(callback: CallbackQuery):
-    """User requested to be reminded later in 3 days."""
+  
     await bot.answer_callback_query(callback.id, "Хорошо, напомню через 3 дня 🕒")
     user_id = callback.from_user.id
 
-    async with AsyncSessionLocal() as session:
-        app = await get_last_app(session, user_id)
-        if not app or app.followup_stage >= 99:
-            return
+    app = await get_application(user_id)
+    if not app or app.get("followup_stage", 99) >= 99:
+        return  # No active application or already completed
 
-        # Mark application as "remind later" — handled by followup_worker
-        app.followup_stage = 3
-        app.followup_last_sent_at = datetime.now(timezone.utc)
-        await session.commit()
+    await update_application(user_id, {
+        "followup_stage": 3,  # Represents "remind in 3 days"
+        "followup_last_sent_at": datetime.now(timezone.utc).isoformat()
+    })

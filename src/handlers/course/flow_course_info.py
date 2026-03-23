@@ -2,32 +2,29 @@
 
 from telebot.types import CallbackQuery
 from src.common import bot
-from src.dao.models import AsyncSessionLocal
+from src.utils.state_manager import get_application, update_application
 from src.keyboards.inline_kb import course_flow_info_kb
-from src.texts.course import ABOUT_PROGRAM
-from src.states import set_context, set_state, UserState
-
-
-async def get_last_app(session, user_id):
-    """
-    Placeholder helper that returns the last application for a user or None.
-    Replace with real DB query logic if needed (e.g. using SQLAlchemy select on your Application model).
-    """
-    return None
+from src.config import settings
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "flow_info")
-async def info_clicked(callback):
-    async with AsyncSessionLocal() as session:
-        app = await get_last_app(session, callback.from_user.id)
+async def info_clicked(callback: CallbackQuery):
 
-        if app and app.is_trial and app.followup_stage == 0:
-            app.followup_stage = 1 
-            await session.commit()
+    user_id = callback.from_user.id
+    chat_id = callback.message.chat.id
 
-    # continue with the normal flow
+    # Fetch latest application asynchronously
+    app = await get_application(user_id)
+
+    if app:
+        fields = app.get("fields", {})
+
+        # If user is in trial and followup_stage is 0, advance stage to 1
+        if fields.get("is_trial") and fields.get("followup_stage") == 0:
+            await update_application(user_id, {"followup_stage": 1})
+
+    # Send course info message
     await bot.send_message(
-        callback.message.chat.id,
-        ABOUT_PROGRAM,
-        reply_markup=course_flow_info_kb()
+        chat_id,
+        settings.get_text("ABOUT_PROGRAM"),  
     )

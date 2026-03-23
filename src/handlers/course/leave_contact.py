@@ -1,33 +1,30 @@
 # src/handlers/course/leave_contact.py
 
 from telebot.types import CallbackQuery
-from sqlalchemy import select
 from src.common import bot
-from src.states import set_state, UserState
+from src.config import settings
 from src.keyboards.reply_kb import contact_request_kb
-from src.dao.models import AsyncSessionLocal, Application
+from src.utils.state_manager import set_state, update_application
 
 @bot.callback_query_handler(func=lambda c: c.data == "leave_contact")
 async def ask_contact(callback: CallbackQuery):
+    """
+    Handles the 'leave contact' action.
+    Marks the current application as 'done' to stop follow-up,
+    and prompts user to share their contact.
+    """
     await bot.answer_callback_query(callback.id)
     user_id = callback.from_user.id
 
-    # mark application status as "done" so the follow-up won't interfere
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(Application)
-            .where(Application.user_id == user_id)
-            .order_by(Application.created_at.desc())
-        )
-        application = result.scalars().first()
-        if application:
-            application.status = "done"
-            await session.commit()
+    # Stop follow-up for the current application
+    await update_application(user_id, {"status": "done"})
 
-    set_state(user_id, UserState.COURSE_CONTACT)
+    # Set state to COURSE_CONTACT to handle user input
+    await set_state(user_id, "course_contact")
 
+    # Send message prompting contact sharing
     await bot.send_message(
         callback.message.chat.id,
-        "Оставь номер телефона кнопкой ниже или напиши свой Telegram @username 💛",
+        settings.get_text("ASK_CONTACT"),  # Grist-driven text
         reply_markup=contact_request_kb()
     )

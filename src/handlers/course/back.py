@@ -1,43 +1,47 @@
 # src/handlers/course/back.py
+"""
+Handler for "back" button/navigation using GRIST for state/context.
+"""
 
 from src.common import bot
-from src.states import get_state, set_state, get_context, UserState
+from src.config import settings
 from src.keyboards.inline_kb import formats_kb, main_kb
-from src.texts.common import FORMAT_TEXT
-from src.texts.start import HELP_TEXT
-
+from src.utils.state_manager import get_state, get_context, set_state
 
 async def handle_back(user_id: int, chat_id: int):
-    state = get_state(user_id)
-    ctx = get_context(user_id)
+    """
+    Handles 'back' action based on current GRIST application state and context.
+    """
+    state = await get_state(user_id)
+    ctx = await get_context(user_id)
 
     flow = ctx.get("flow")
     fmt = ctx.get("format")
 
-    # -------- TRIAL / INFO --------
+    # -------- TRIAL / COURSE INFO --------
     if flow in {"trial", "course_info"}:
-        set_state(user_id, UserState.IDLE)
-        await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())
+        await set_state(user_id, "idle")
+        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())
         return
 
-    # -------- CONTRA --------
+    # -------- CONTRAINDICATION FLOW --------
     if fmt == "contra":
-        set_state(user_id, UserState.IDLE)
-        await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())
+        await set_state(user_id, "idle")
+        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())
         return
 
-    # -------- CONTACT --------
-    if state == UserState.COURSE_CONTACT:
-        set_state(user_id, UserState.COURSE_FORMAT)
-        await bot.send_message(chat_id, FORMAT_TEXT, reply_markup=formats_kb())
+    # -------- CONTACT FLOW --------
+    if state == "course_contact":
+        await set_state(user_id, "course_format")
+        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=formats_kb())
         return
 
-    # -------- PAY / FORMAT --------
-    if state in {UserState.COURSE_PAY, UserState.COURSE_FORMAT}:
-        set_state(user_id, UserState.COURSE_FORMAT)
-        await bot.send_message(chat_id, FORMAT_TEXT, reply_markup=formats_kb())
+    # -------- PAY / FORMAT FLOW --------
+    if state in {"course_pay", "course_format"}:
+        await set_state(user_id, "course_format")
+        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=formats_kb())
         return
 
     # -------- FALLBACK --------
-    set_state(user_id, UserState.IDLE)
-    await bot.send_message(chat_id, HELP_TEXT, reply_markup=main_kb())
+    await set_state(user_id, "idle")
+    await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())

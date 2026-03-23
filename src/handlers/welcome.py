@@ -2,29 +2,37 @@
 
 from telebot.types import Message
 from src.common import bot
-from src.dao.models import AsyncSessionLocal, User
 from src.keyboards.inline_kb import main_kb
-from src.texts.start import WELCOME, RETURNING_WELCOME
-from src.states import set_state, UserState
+from src.utils.grist_helper import get_grist_user, create_user
+from src.config import settings
+
 
 @bot.message_handler(commands=["start", "help"])
 async def send_welcome(message: Message):
-    async with AsyncSessionLocal() as session:
-        user = await session.get(User, message.from_user.id)
+    user_id = message.from_user.id
 
-        if not user:
-            user = User(
-                telegram_id=message.from_user.id,
-                username=message.from_user.username,
-                first_name=message.from_user.first_name,
-                last_name=message.from_user.last_name,
-            )
-            session.add(user)
-            text = WELCOME
-        else:
-            text = RETURNING_WELCOME
+    # --- CHECK IF USER EXISTS ---
+    existing_user = await get_grist_user(user_id)
 
-        await session.commit()
+    # ---------------- NEW USER ----------------
+    if not existing_user:
+        await create_user(message.from_user)
 
-    await bot.send_message(message.chat.id, text, reply_markup=main_kb())
-    set_state(message.from_user.id, UserState.IDLE)
+        text = settings.get_text(
+            "WELCOME",
+            name=message.from_user.first_name or ""
+        )
+
+    # ---------------- RETURNING USER ----------------
+    else:
+        text = settings.get_text(
+            "RETURNING_WELCOME",
+            name=message.from_user.first_name or ""
+        )
+
+    # --- SEND MESSAGE ---
+    await bot.send_message(
+        message.chat.id,
+        text,
+        reply_markup=main_kb()
+    )

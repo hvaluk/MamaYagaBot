@@ -1,24 +1,51 @@
 # main.py
 
 import asyncio
-from src.common import bot
-from src.handlers import *
-from src.utils.followup import followup_worker
-from src.utils.nocodb_sync import nocodb_worker
+import logging
 
+from src.common import bot
+from src.handlers import *  
+from src.utils.followup import followup_worker
+from src.config import config_updater_worker, settings
+
+
+# --- LOGGING CONFIG ---
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+
+
+# --- MAIN APP ---
 
 async def main():
-    print("Bot is running...")
-    # Start the follow-up worker concurrently
-    asyncio.create_task(followup_worker())
-    asyncio.create_task(nocodb_worker())
-    try:
-        await bot.infinity_polling(timeout=10, request_timeout=20)
-    except Exception as e:
-        print(f"ERROR in polling: {e}")
-        await asyncio.sleep(5)
-        await main()
+    logging.info("🚀 Bot is starting...")
 
+    # --- Initial config load ---
+    settings.refresh()
+
+    # --- Background workers ---
+    asyncio.create_task(config_updater_worker(settings.FOLLOWUP_CHECK_INTERVAL))
+    asyncio.create_task(followup_worker())
+
+    # --- Polling loop with auto-restart ---
+    while True:
+        try:
+            logging.info("🤖 Bot polling started")
+            await bot.infinity_polling(timeout=10, request_timeout=20)
+
+        except Exception as e:
+            logging.error(f"❌ Polling error: {e}", exc_info=True)
+
+            # Prevent crash loop
+            await asyncio.sleep(5)
+
+
+# --- ENTRYPOINT ---
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("🛑 Bot stopped manually")

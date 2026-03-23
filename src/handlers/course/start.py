@@ -3,20 +3,29 @@
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import pregnancy_kb
-from src.texts.common import ASK_TERM
-from src.states import set_context, set_state, UserState
+from src.config import settings
+
+from src.utils.grist_helper import create_application
+from src.utils.state_manager import set_state
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "start_course_flow")
 async def start_course_flow(call: CallbackQuery):
     user_id = call.from_user.id
 
-    set_context(user_id, trial_flow=False)
+    # --- CREATE NEW APPLICATION ---
+    await create_application(user_id, {
+        "entry_point": "course",
+        "is_trial": False,
+        "current_step": "course_term"
+    })
 
+    # --- SET STATE ---
+    await set_state(user_id, "course_term")
+
+    # --- SEND FIRST QUESTION ---
     await bot.send_message(
         call.message.chat.id,
-        ASK_TERM,
+        settings.get_text("ASK_TERM"),
         reply_markup=pregnancy_kb()
     )
-
-    set_state(user_id, UserState.COURSE_TERM)
