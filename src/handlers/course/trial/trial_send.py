@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from src.common import bot
 from src.config import settings
-from src.keyboards.inline_kb import trial_lesson_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.utils.state_manager import update_application
 
 
@@ -28,8 +28,9 @@ async def send_trial_lesson(callback: CallbackQuery):
     })
 
     # Send the trial offer message with inline keyboard
+    kb = await build_inline_kb("trial_lesson_kb")
     await bot.send_message(
         chat_id,
         settings.get_text("TRIAL_OFFER"),
-        reply_markup=trial_lesson_kb()
-    ) 
+        reply_markup=kb
+    )

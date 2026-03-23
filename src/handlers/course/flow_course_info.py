@@ -1,9 +1,10 @@
 # src/handlers/course/flow_course_info.py
 
+
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.utils.state_manager import get_application, update_application
-from src.keyboards.inline_kb import course_flow_info_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.config import settings
 
 
@@ -24,7 +25,9 @@ async def info_clicked(callback: CallbackQuery):
             await update_application(user_id, {"followup_stage": 1})
 
     # Send course info message
+    kb = await build_inline_kb("course_flow_info_kb")
     await bot.send_message(
         chat_id,
-        settings.get_text("ABOUT_PROGRAM"),  
+        settings.get_text("ABOUT_PROGRAM"),  # Now fetched dynamically from GRIST Texts table
+        reply_markup=kb
     )

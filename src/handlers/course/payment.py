@@ -3,19 +3,18 @@
 from telebot.types import CallbackQuery
 from src.common import bot
 from src.config import settings
-from src.keyboards.inline_kb import payment_confirm_kb
+from src.keyboards.reply_kb import build_inline_kb
 from src.utils.state_manager import get_state, get_application, update_application, set_state
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "user:pay_course")
 async def start_payment(callback: CallbackQuery):
-   
     await bot.answer_callback_query(callback.id)
     user_id = callback.from_user.id
 
     app = await get_application(user_id)
     if not app:
-        await bot.send_message(user_id, "Ошибка. Начни заявку заново 🙏")
+        await bot.send_message(user_id, "Ошибка. Начни заявку заново")
         await set_state(user_id, "idle")
         return
 
@@ -26,8 +25,9 @@ async def start_payment(callback: CallbackQuery):
     })
 
     # --- SEND PAYMENT LINK ---
-    payment_text = f"{settings.get_text('PAYMENT_MESSAGE')}\n\n👉 {settings.COURSE_PAY_LINK}"
-    await bot.send_message(user_id, payment_text, reply_markup=payment_confirm_kb())
+    payment_kb = await build_inline_kb("payment_confirm_kb")
+    payment_text = f"{settings.get_text('PAYMENT_MESSAGE')}\n\n{settings.COURSE_PAY_LINK}"
+    await bot.send_message(user_id, payment_text, reply_markup=payment_kb)
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "user:paid")
@@ -37,7 +37,7 @@ async def confirm_payment(callback: CallbackQuery):
 
     app = await get_application(user_id)
     if not app:
-        await bot.send_message(user_id, "Не вижу активную заявку 🙏")
+        await bot.send_message(user_id, "Не вижу активную заявку")
         await set_state(user_id, "idle")
         return
 

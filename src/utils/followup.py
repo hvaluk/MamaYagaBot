@@ -6,7 +6,7 @@ import requests
 
 from src.common import bot
 from src.config import settings, GRIST_BASE_URL, GRIST_DOC_ID, GRIST_API_KEY
-from src.keyboards.inline_kb import followup_60min_kb, followup_24h_kb, followup_3days_kb
+from src.keyboards.inline_kb import build_inline_kb
 
 HEADERS = {"Authorization": f"Bearer {GRIST_API_KEY}"}
 
@@ -70,8 +70,9 @@ async def followup_worker():
 
                 # --- 60 MIN FOLLOW-UP ---
                 if stage == 0 and delta >= timedelta(minutes=60):
+                    kb = await build_inline_kb("followup_60min_kb")
                     text = settings.get_text("FOLLOWUP_FIRST")
-                    await bot.send_message(user_id, text, reply_markup=followup_60min_kb())
+                    await bot.send_message(user_id, text, reply_markup=kb)
                     update_application(rec["id"], {
                         "followup_stage": 1,
                         "followup_last_sent_at": now.isoformat()
@@ -79,8 +80,9 @@ async def followup_worker():
 
                 # --- 24H FOLLOW-UP ---
                 elif stage == 1 and delta >= timedelta(hours=24):
+                    kb = await build_inline_kb("followup_24h_kb")
                     text = settings.get_text("FOLLOWUP_24H")
-                    await bot.send_message(user_id, text, reply_markup=followup_24h_kb())
+                    await bot.send_message(user_id, text, reply_markup=kb)
                     update_application(rec["id"], {
                         "followup_stage": 2,
                         "followup_last_sent_at": now.isoformat()
@@ -88,8 +90,9 @@ async def followup_worker():
 
                 # --- 3 DAYS REMINDER ---
                 elif stage == 3 and last_sent and (now - last_sent >= timedelta(days=3)):
+                    kb = await build_inline_kb("followup_3days_kb")
                     text = settings.get_text("FOLLOWUP_3D", name="✨")
-                    await bot.send_message(user_id, text, reply_markup=followup_3days_kb())
+                    await bot.send_message(user_id, text, reply_markup=kb)
                     update_application(rec["id"], {
                         "followup_stage": 99
                     })

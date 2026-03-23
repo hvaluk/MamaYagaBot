@@ -5,7 +5,7 @@ Handler for "back" button/navigation using GRIST for state/context.
 
 from src.common import bot
 from src.config import settings
-from src.keyboards.inline_kb import formats_kb, main_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.utils.state_manager import get_state, get_context, set_state
 
 async def handle_back(user_id: int, chat_id: int):
@@ -20,28 +20,33 @@ async def handle_back(user_id: int, chat_id: int):
 
     # -------- TRIAL / COURSE INFO --------
     if flow in {"trial", "course_info"}:
+        kb = await build_inline_kb("main_kb")
         await set_state(user_id, "idle")
-        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())
+        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=kb)
         return
 
     # -------- CONTRAINDICATION FLOW --------
     if fmt == "contra":
+        kb = await build_inline_kb("contact_request_kb")
         await set_state(user_id, "idle")
-        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())
+        await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=kb)
         return
 
     # -------- CONTACT FLOW --------
     if state == "course_contact":
+        kb = await build_inline_kb("contact_request_kb")
         await set_state(user_id, "course_format")
-        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=formats_kb())
+        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=kb)
         return
 
     # -------- PAY / FORMAT FLOW --------
     if state in {"course_pay", "course_format"}:
+        kb = await build_inline_kb("formats_kb")
         await set_state(user_id, "course_format")
-        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=formats_kb())
+        await bot.send_message(chat_id, settings.get_text("FORMAT_TEXT"), reply_markup=kb)
         return
 
     # -------- FALLBACK --------
+    kb = await build_inline_kb("main_kb")
     await set_state(user_id, "idle")
-    await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=main_kb())
+    await bot.send_message(chat_id, settings.get_text("HELP_TEXT"), reply_markup=kb)

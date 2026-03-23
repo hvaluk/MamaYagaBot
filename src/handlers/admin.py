@@ -3,12 +3,7 @@
 from telebot.types import Message, CallbackQuery
 from src.common import bot
 from src.config import ADMIN_IDS
-from src.keyboards.inline_kb import (
-    admin_main_kb,
-    admin_payment_kb,
-    admin_request_kb,
-    admin_users_filter_kb
-)
+from src.keyboards.reply_kb import build_inline_kb
 from src.utils.humanize import humanize, FORMAT_MAP, TERM_MAP, EXP_MAP, CONTRA_MAP
 from src.utils.state_manager import get_applications, get_application, update_application
 
@@ -23,11 +18,9 @@ def is_admin(user_id: int) -> bool:
 async def admin_menu(message: Message):
     if not is_admin(message.from_user.id):
         return
-    await bot.send_message(
-        message.chat.id,
-        "Админ-панель",
-        reply_markup=admin_main_kb()
-    )
+
+    kb = await build_inline_kb("admin_main_kb")
+    await bot.send_message(message.chat.id, "Админ-панель", reply_markup=kb)
 
 
 # -------------------- Applications --------------------
@@ -43,9 +36,9 @@ async def admin_applications(call: CallbackQuery):
         return
 
     for app in apps:
-        user = app["user"]
+        user = app.get("user", {})
         text = (
-            f"Заявка #{app['id']}\n\n"
+            f"Заявка #{app['id']}\n"
             f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"
             f"Username: @{user.get('username', '—')}\n"
             f"Срок беременности: {humanize(app.get('pregnancy_term', ''), TERM_MAP)}\n"
@@ -56,17 +49,18 @@ async def admin_applications(call: CallbackQuery):
             f"Дата создания: {app.get('created_at', '')}\n"
             f"Статус: {app.get('status', '')}"
         )
-        await bot.send_message(call.message.chat.id, text, reply_markup=admin_request_kb(app["id"]))
+        kb = await build_inline_kb("admin_request_kb")
+        await bot.send_message(call.message.chat.id, text, reply_markup=kb)
 
 
-# -------------------- Actions on applications (Completed / Rejected) --------------------
+# -------------------- Actions on applications --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin:req_"))
 async def admin_request_action(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
 
     parts = call.data.split(":")
-    action = parts[1]  # req_done / req_reject
+    action = parts[1]
     app_id = int(parts[2])
 
     app = await get_application(app_id)
@@ -80,7 +74,7 @@ async def admin_request_action(call: CallbackQuery):
         await update_application(app_id, {"status": "rejected"})
 
     await bot.edit_message_text(
-        f"Заявка #{app_id}\nСтатус: {app['status']}",
+        f"Заявка #{app_id}\nСтатус: {app.get('status', '')}",
         call.message.chat.id,
         call.message.message_id
     )
@@ -100,16 +94,17 @@ async def admin_payments(call: CallbackQuery):
         return
 
     for app in apps:
-        user = app["user"]
+        user = app.get("user", {})
         text = (
-            f"Оплата ожидает подтверждения\n\n"
+            f"Оплата ожидает подтверждения\n"
             f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"
             f"Username: @{user.get('username', '—')}\n"
             f"Источник: {app.get('entry_point', '')}\n"
             f"Формат: {humanize(app.get('format', ''), FORMAT_MAP)}\n"
             f"Дата создания: {app.get('created_at', '')}"
         )
-        await bot.send_message(call.message.chat.id, text, reply_markup=admin_payment_kb(app["id"]))
+        kb = await build_inline_kb("admin_payment_kb")
+        await bot.send_message(call.message.chat.id, text, reply_markup=kb)
 
 
 # -------------------- Payment confirmation / rejection --------------------
@@ -132,27 +127,23 @@ async def admin_payment_action(call: CallbackQuery):
         await update_application(app_id, {"status": "rejected"})
 
     await bot.edit_message_text(
-        f"Заявка #{app_id}\nСтатус: {app['status']}",
+        f"Заявка #{app_id}\nСтатус: {app.get('status', '')}",
         call.message.chat.id,
         call.message.message_id
     )
     await bot.answer_callback_query(call.id, "Статус обновлён")
 
 
-# -------------------- User management (main button) --------------------
+# -------------------- User management --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:users")
 async def admin_users(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
     await bot.answer_callback_query(call.id)
-    await bot.send_message(
-        call.message.chat.id,
-        "Выберите фильтр пользователей:",
-        reply_markup=admin_users_filter_kb()
-    )
+    kb = await build_inline_kb("admin_users_filter_kb")
+    await bot.send_message(call.message.chat.id, "Выберите фильтр пользователей:", reply_markup=kb)
 
 
-# -------------------- User filters --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin_users:"))
 async def admin_users_filter(call: CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -167,7 +158,7 @@ async def admin_users_filter(call: CallbackQuery):
         return
 
     for app in apps:
-        user = app["user"]
+        user = app.get("user", {})
         followup = "Нет follow-up" if app.get("followup_stage") == 99 else f"Этап: {app.get('followup_stage')}"
         text = (
             f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"

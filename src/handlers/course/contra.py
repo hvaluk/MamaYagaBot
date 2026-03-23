@@ -6,8 +6,8 @@ from src.config import settings
 
 from src.utils.state_manager import get_state, set_state, update_application
 
-from src.keyboards.inline_kb import formats_kb, trial_lesson_kb
-from src.keyboards.reply_kb import contact_request_kb
+from src.keyboards.inline_kb import build_inline_kb
+from src.keyboards.reply_kb import build_reply_kb
 
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("contra_"))
@@ -33,10 +33,11 @@ async def course_contra(call: CallbackQuery):
 
         await set_state(user_id, "course_contact")
 
+        kb = await build_inline_kb("contact_request_kb")
         await bot.send_message(
             call.message.chat.id,
             settings.get_text("CONTRA_TEXT"),
-            reply_markup=contact_request_kb()
+            reply_markup=kb
         )
         return
 
@@ -47,8 +48,9 @@ async def course_contra(call: CallbackQuery):
 
     await set_state(user_id, "course_format")
 
+    kb = await build_inline_kb("formats_kb")
     await bot.send_message(
         call.message.chat.id,
         settings.get_text("FORMAT_TEXT"),
-        reply_markup=formats_kb()
+        reply_markup=kb
     )

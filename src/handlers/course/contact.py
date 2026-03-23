@@ -2,8 +2,7 @@
 
 from telebot.types import Message, Contact, ReplyKeyboardRemove
 from src.common import bot
-from src.config import settings, OWNER_IDS
-from src.keyboards.reply_kb import contact_request_kb
+from src.config import OWNER_IDS
 from src.utils.state_manager import get_state, set_state, get_application, update_application
 
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
@@ -33,13 +32,13 @@ async def receive_contact(message: Message):
         contact = message.text.strip()
 
     if not contact or len(contact) < 3 or contact.lower() in FORBIDDEN_CONTACT_VALUES:
-        await bot.send_message(chat_id, "Пожалуйста, отправь номер телефона или Telegram @username 💛")
+        await bot.send_message(chat_id, "Пожалуйста, отправь номер телефона или Telegram @username")
         return
 
     # --- GET APPLICATION ---
     app = await get_application(user_id)
     if not app:
-        await bot.send_message(chat_id, "Ошибка. Попробуй начать заново 🙏")
+        await bot.send_message(chat_id, "Ошибка. Попробуй начать заново")
         await set_state(user_id, "idle")
         return
 
@@ -53,22 +52,22 @@ async def receive_contact(message: Message):
     # --- CONFIRM TO USER ---
     await bot.send_message(
         chat_id,
-        "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время.",
+        "Спасибо! Ваш контакт сохранён.",
         reply_markup=ReplyKeyboardRemove()
     )
     await set_state(user_id, "idle")
 
     # --- ADMIN NOTIFICATION ---
     text = (
-        f"📋 Заявка #{app['id']}\n"
-        f"👤 Пользователь: {app.get('first_name', '')} {app.get('last_name', '')}\n"
-        f"🔗 Username: @{app.get('username', '—')}\n"
-        f"🤰 Срок: {app.get('pregnancy_term', '—')}\n"
-        f"🧘 Опыт: {app.get('yoga_experience', '—')}\n"
-        f"⚠️ Противопоказания: {app.get('contraindications', '—')}\n"
-        f"📚 Формат: {app.get('format', '—')}\n"
-        f"📞 Контакт: {contact}\n"
-        f"🕒 {app.get('created_at', '')}"
+        f"Заявка #{app['id']}\n"
+        f"Пользователь: {app.get('first_name', '')} {app.get('last_name', '')}\n"
+        f"Username: @{app.get('username', '—')}\n"
+        f"Срок: {app.get('pregnancy_term', '—')}\n"
+        f"Опыт: {app.get('yoga_experience', '—')}\n"
+        f"Противопоказания: {app.get('contraindications', '—')}\n"
+        f"Формат: {app.get('format', '—')}\n"
+        f"Контакт: {contact}\n"
+        f"Дата создания: {app.get('created_at', '')}"
     )
     for owner_id in OWNER_IDS:
         try:

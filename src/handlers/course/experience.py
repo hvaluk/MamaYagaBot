@@ -2,7 +2,7 @@
 
 from telebot.types import CallbackQuery
 from src.common import bot
-from src.keyboards.inline_kb import contra_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.config import settings
 
 from src.utils.state_manager import get_state, set_state, update_application
@@ -43,8 +43,9 @@ async def course_experience(call: CallbackQuery):
     else:
         text = settings.get_text("SAFE_TEXT_EXPERIENCED")
 
+    kb = await build_inline_kb("contra_kb")
     await bot.send_message(
         call.message.chat.id,
         text,
-        reply_markup=contra_kb()
+        reply_markup=kb
     )
