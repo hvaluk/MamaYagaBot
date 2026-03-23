@@ -59,15 +59,16 @@ async def create_application(user_id: int, fields: dict) -> dict | None:
             "fields": {
                 "User": user["id"],
                 "entry_point": fields.get("entry_point", "course"),
-                "pregnancy_term": fields.get("pregnancy_term"),
-                "yoga_experience": fields.get("yoga_experience"),
-                "contraindications": fields.get("contraindications"),
-                "format": fields.get("format"),
-                "contact": fields.get("contact"),
+                "pregnancy_term": fields.get("pregnancy_term") or "",
+                "yoga_experience": fields.get("yoga_experience") or "",
+                "contraindications": fields.get("contraindications") or "",
+                "format": fields.get("format") or "",
+                "contact": fields.get("contact") or "",
                 "is_trial": fields.get("is_trial", False),
                 "followup_stage": 0,
                 "status": "new",
                 "current_step": fields.get("current_step", "start"),
+                "feelings": json.dumps(fields.get("feelings", [])),  
                 "created_at": now()
             }
         }]

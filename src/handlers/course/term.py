@@ -10,9 +10,9 @@ from src.utils.humanize import TERM_MAP
 
 @bot.callback_query_handler(func=lambda c: c.data in TERM_MAP)
 async def course_term(call: CallbackQuery):
+    print("CALL DATA:", call.data)
     user_id = call.from_user.id
 
-    # --- STATE CHECK ---
     state = await get_state(user_id)
     if state != "course_term":
         return
@@ -21,13 +21,13 @@ async def course_term(call: CallbackQuery):
 
     term = TERM_MAP[call.data]
 
-    # --- UPDATE APPLICATION ---
-    await update_application(user_id, {"pregnancy_term": term})
+    await update_application(user_id, {
+        "pregnancy_term": term,
+        "current_step": "course_feeling"
+    })
 
-    # --- NEXT STEP ---
     await set_state(user_id, "course_feeling")
 
-    # --- SEND NEXT QUESTION: состояние ---
     kb = await build_inline_kb("feeling_kb")
     await bot.send_message(
         call.message.chat.id,

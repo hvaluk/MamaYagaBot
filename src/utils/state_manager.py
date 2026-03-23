@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 import json
 from src.utils.grist_helper import (
-    get_latest_application,
+   get_latest_application,
     update_application as grist_update_application,
     get_applications as _get_apps,
 )
