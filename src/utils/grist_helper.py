@@ -61,7 +61,7 @@ async def create_application(user_id: int, fields: dict) -> dict | None:
                 "entry_point": fields.get("entry_point", "course"),
                 "pregnancy_term": fields.get("pregnancy_term") or "",
                 "yoga_experience": fields.get("yoga_experience") or "",
-                "contraindications": fields.get("contraindications") or "",
+                "request_type": fields.get("request_type") or "",
                 "format": fields.get("format") or "",
                 "contact": fields.get("contact") or "",
                 "is_trial": fields.get("is_trial", False),
@@ -69,7 +69,7 @@ async def create_application(user_id: int, fields: dict) -> dict | None:
                 "status": "new",
                 "current_step": fields.get("current_step", "start"),
                 "feelings": json.dumps(fields.get("feelings", [])),  
-                "created_at": now()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
         }]
     }

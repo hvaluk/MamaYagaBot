@@ -20,3 +20,5 @@ from src.handlers.course.trial.trial_material import *
 from src.handlers.course.trial.trial_send import *
 from src.handlers.course.payment import *
 from src.handlers.course.feeling import *
+from src.handlers.course.request import *
+from src.handlers.course.consult import *

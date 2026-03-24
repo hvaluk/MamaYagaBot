@@ -28,15 +28,12 @@ async def course_experience(call: CallbackQuery):
     })
 
     # --- NEXT STEP ---
-    await set_state(user_id, "course_contra")
+    await set_state(user_id, "course_request")
 
     # --- SEND MESSAGE ---
-    if value in ["нет", "немного"]:
-        text = settings.get_text("SAFE_TEXT")
-    else:
-        text = settings.get_text("SAFE_TEXT_EXPERIENCED")
-
-    kb = await build_inline_kb("contra_kb")
+    text = settings.get_text("ASK_REQUEST")
+  
+    kb = await build_inline_kb("request_kb")
     await bot.send_message(
         call.message.chat.id,
         text,

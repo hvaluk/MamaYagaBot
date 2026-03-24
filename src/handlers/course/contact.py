@@ -2,6 +2,7 @@
 
 import re
 import json
+from datetime import datetime, timezone
 from telebot.types import Message, Contact, ReplyKeyboardRemove
 from src.common import bot
 from src.config import OWNER_IDS
@@ -9,21 +10,34 @@ from src.utils.state_manager import get_state, set_state, get_application, updat
 
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
 
+# ---------------- HELPER ----------------
+def format_grist_datetime(value) -> str:
+    """
+    Convert Grist timestamp or ISO string to readable ISO 8601 string.
+    """
+    if isinstance(value, (int, float)):
+        # convert Unix timestamp to ISO string in UTC
+        return datetime.fromtimestamp(value, tz=timezone.utc).isoformat()
+    elif isinstance(value, str):
+        return value
+    else:
+        return datetime.now(timezone.utc).isoformat() 
+
 
 # --- VALIDATION HELPERS ---
-
 def is_valid_phone(text: str) -> bool:
-    """
-    Validate phone number (simple international format)
-    """
+    """Validate phone number (simple international format)"""
     return bool(re.fullmatch(r"^\+?\d{7,15}$", text))
 
 
 def is_valid_username(text: str) -> bool:
-    """
-    Validate Telegram username
-    """
+    """Validate Telegram username"""
     return bool(re.fullmatch(r"^@[a-zA-Z0-9_]{5,32}$", text))
+
+
+def now_iso() -> str:
+    """Return current UTC time as ISO 8601 string"""
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ---------------- HANDLER ----------------
@@ -46,10 +60,8 @@ async def receive_contact(message: Message):
 
     # --- EXTRACT CONTACT ---
     contact: str | None = None
-
     if message.contact and isinstance(message.contact, Contact):
         contact = message.contact.phone_number
-
     elif message.text:
         contact = message.text.strip()
 
@@ -76,7 +88,7 @@ async def receive_contact(message: Message):
     await update_application(user_id, {
         "contact": contact,
         "current_step": "done",
-        "status": "done"
+        "status": "submitted"  # <-- user submitted, pending admin
     })
 
     # --- CONFIRM TO USER ---
@@ -90,7 +102,6 @@ async def receive_contact(message: Message):
 
     # --- PREPARE DATA FOR ADMIN ---
     fields = app["fields"]
-
     try:
         feelings = json.loads(fields.get("feelings") or "[]")
     except:
@@ -98,16 +109,17 @@ async def receive_contact(message: Message):
 
     # --- ADMIN MESSAGE ---
     text = (
-        f"Заявка #{app['id']}\n"
+        f"Заявка #{app['id']}\n\n"
         f"Пользователь: {message.from_user.first_name or ''} {message.from_user.last_name or ''}\n"
         f"Username: @{message.from_user.username or '—'}\n"
+        f"Telegram ID: {user_id}\n\n"
         f"Срок: {fields.get('pregnancy_term', '—')}\n"
         f"Чувства: {', '.join(feelings) if feelings else '—'}\n"
         f"Опыт: {fields.get('yoga_experience', '—')}\n"
-        f"Противопоказания: {fields.get('contraindications', '—')}\n"
+        f"Запрос: {fields.get('request_type', '—')}\n"
         f"Формат: {fields.get('format', '—')}\n"
         f"Контакт: {contact}\n"
-        f"Дата создания: {fields.get('created_at', '')}"
+        f"Дата создания: {format_grist_datetime(fields.get('created_at'))}"
     )
 
     # --- SEND TO ADMINS ---

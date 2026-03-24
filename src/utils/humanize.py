@@ -33,6 +33,12 @@ FEELING_MAP = {
     "feeling_good": "В целом всё хорошо, но хочу подготовиться к родам",
 }
 
+REQUEST_MAP = {
+    "request_prepare_birth": "Подготовиться к родам",
+    "request_relieve_tension": "Убрать напряжение в теле",
+    "request_learn_relax": "Научиться расслабляться",
+    "request_guidelines": "Понять, что можно / нельзя",
+}
 
 def humanize(value: str | None, mapping: dict) -> str:
     """
