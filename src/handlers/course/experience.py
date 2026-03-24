@@ -4,15 +4,8 @@ from telebot.types import CallbackQuery
 from src.common import bot
 from src.keyboards.inline_kb import build_inline_kb
 from src.config import settings
-
+from src.utils.humanize import EXP_MAP
 from src.utils.state_manager import get_state, set_state, update_application
-
-
-EXP_MAP = {
-    "exp_none": "нет",
-    "exp_some": "немного",
-    "exp_regular": "регулярно",
-}
 
 
 @bot.callback_query_handler(func=lambda c: c.data in EXP_MAP)

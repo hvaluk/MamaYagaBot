@@ -1,5 +1,7 @@
 # src/handlers/course/contact.py
 
+import re
+import json
 from telebot.types import Message, Contact, ReplyKeyboardRemove
 from src.common import bot
 from src.config import OWNER_IDS
@@ -7,6 +9,24 @@ from src.utils.state_manager import get_state, set_state, get_application, updat
 
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
 
+
+# --- VALIDATION HELPERS ---
+
+def is_valid_phone(text: str) -> bool:
+    """
+    Validate phone number (simple international format)
+    """
+    return bool(re.fullmatch(r"^\+?\d{7,15}$", text))
+
+
+def is_valid_username(text: str) -> bool:
+    """
+    Validate Telegram username
+    """
+    return bool(re.fullmatch(r"^@[a-zA-Z0-9_]{5,32}$", text))
+
+
+# ---------------- HANDLER ----------------
 
 @bot.message_handler(content_types=["text", "contact"])
 async def receive_contact(message: Message):
@@ -26,13 +46,23 @@ async def receive_contact(message: Message):
 
     # --- EXTRACT CONTACT ---
     contact: str | None = None
+
     if message.contact and isinstance(message.contact, Contact):
         contact = message.contact.phone_number
+
     elif message.text:
         contact = message.text.strip()
 
-    if not contact or len(contact) < 3 or contact.lower() in FORBIDDEN_CONTACT_VALUES:
-        await bot.send_message(chat_id, "Пожалуйста, отправь номер телефона или Telegram @username")
+    # --- VALIDATION ---
+    if (
+        not contact
+        or contact.lower() in FORBIDDEN_CONTACT_VALUES
+        or not (is_valid_phone(contact) or is_valid_username(contact))
+    ):
+        await bot.send_message(
+            chat_id,
+            "Пожалуйста, отправь корректный номер телефона или Telegram @username"
+        )
         return
 
     # --- GET APPLICATION ---
@@ -43,7 +73,7 @@ async def receive_contact(message: Message):
         return
 
     # --- UPDATE APPLICATION ---
-    await update_application(app["id"], {
+    await update_application(user_id, {
         "contact": contact,
         "current_step": "done",
         "status": "done"
@@ -55,20 +85,32 @@ async def receive_contact(message: Message):
         "Спасибо! Ваш контакт сохранён.",
         reply_markup=ReplyKeyboardRemove()
     )
+
     await set_state(user_id, "idle")
 
-    # --- ADMIN NOTIFICATION ---
+    # --- PREPARE DATA FOR ADMIN ---
+    fields = app["fields"]
+
+    try:
+        feelings = json.loads(fields.get("feelings") or "[]")
+    except:
+        feelings = []
+
+    # --- ADMIN MESSAGE ---
     text = (
         f"Заявка #{app['id']}\n"
-        f"Пользователь: {app.get('first_name', '')} {app.get('last_name', '')}\n"
-        f"Username: @{app.get('username', '—')}\n"
-        f"Срок: {app.get('pregnancy_term', '—')}\n"
-        f"Опыт: {app.get('yoga_experience', '—')}\n"
-        f"Противопоказания: {app.get('contraindications', '—')}\n"
-        f"Формат: {app.get('format', '—')}\n"
+        f"Пользователь: {message.from_user.first_name or ''} {message.from_user.last_name or ''}\n"
+        f"Username: @{message.from_user.username or '—'}\n"
+        f"Срок: {fields.get('pregnancy_term', '—')}\n"
+        f"Чувства: {', '.join(feelings) if feelings else '—'}\n"
+        f"Опыт: {fields.get('yoga_experience', '—')}\n"
+        f"Противопоказания: {fields.get('contraindications', '—')}\n"
+        f"Формат: {fields.get('format', '—')}\n"
         f"Контакт: {contact}\n"
-        f"Дата создания: {app.get('created_at', '')}"
+        f"Дата создания: {fields.get('created_at', '')}"
     )
+
+    # --- SEND TO ADMINS ---
     for owner_id in OWNER_IDS:
         try:
             await bot.send_message(owner_id, text)

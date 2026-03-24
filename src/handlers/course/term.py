@@ -10,7 +10,6 @@ from src.utils.humanize import TERM_MAP
 
 @bot.callback_query_handler(func=lambda c: c.data in TERM_MAP)
 async def course_term(call: CallbackQuery):
-    print("CALL DATA:", call.data)
     user_id = call.from_user.id
 
     state = await get_state(user_id)

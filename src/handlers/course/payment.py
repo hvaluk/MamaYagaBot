@@ -19,7 +19,7 @@ async def start_payment(callback: CallbackQuery):
         return
 
     # --- STOP FOLLOW-UP ---
-    await update_application(app["id"], {
+    await update_application(user_id, {
         "followup_stage": 99,
         "followup_last_sent_at": None
     })
@@ -42,7 +42,7 @@ async def confirm_payment(callback: CallbackQuery):
         return
 
     # --- UPDATE APPLICATION ---
-    await update_application(app["id"], {
+    await update_application(user_id, {
         "status": "paid_pending",
         "current_step": "payment_confirmed",
         "followup_stage": 99
