@@ -2,7 +2,7 @@
 
 from telebot.types import Message
 from src.common import bot
-from src.keyboards.reply_kb import build_inline_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.utils.grist_helper import get_grist_user, create_user
 from src.config import settings
 

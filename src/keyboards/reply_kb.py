@@ -19,18 +19,3 @@ async def build_reply_kb(name: str) -> types.ReplyKeyboardMarkup:
 
     return kb
 
-
-async def build_inline_kb(name: str) -> types.InlineKeyboardMarkup:
-    """
-    Build inline keyboard from Grist 'Buttons' table
-    """
-    kb = types.InlineKeyboardMarkup()
-    buttons = await get_buttons_for_keyboard(name)
-    buttons.sort(key=lambda b: b["row_order"])
-
-    for btn in buttons:
-        kb.add(types.InlineKeyboardButton(
-            text=btn["label"],
-            callback_data=btn.get("callback_data", btn["label"])
-        ))
-    return kb

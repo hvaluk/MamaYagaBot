@@ -1,4 +1,5 @@
 # src/utils/humanize.py
+import datetime 
 
 TERM_MAP = {
     "term_0_12": "До 12 недель",
@@ -52,3 +53,28 @@ def humanize(value: str | None, mapping: dict) -> str:
         return "Не выбран"
     
     return mapping.get(value, value)
+
+def format_human_datetime(value) -> str:
+    """
+    Преобразует timestamp (float или ISO str) в красивую дату
+    """
+    if value is None:
+        return "—"
+    
+    # если пришёл float (UNIX timestamp)
+    if isinstance(value, (float, int)):
+        try:
+            dt = datetime.datetime.fromtimestamp(value)
+            return dt.strftime("%d.%m.%Y %H:%M")
+        except Exception:
+            return str(value)
+    
+    # если уже строка ISO
+    if isinstance(value, str):
+        try:
+            dt = datetime.datetime.fromisoformat(value)
+            return dt.strftime("%d.%m.%Y %H:%M")
+        except Exception:
+            return value
+    
+    return str(value)

@@ -51,5 +51,5 @@ async def consult_later(call: CallbackQuery):
     await bot.answer_callback_query(call.id)
 
     text = settings.get_text("CONSULT_LATER_TEXT")
-    kb = await build_inline_kb("consult_offer_kb")
-    await bot.send_message(call.message.chat.id, text, reply_markup=kb)
+
+    await bot.send_message(call.message.chat.id, text)

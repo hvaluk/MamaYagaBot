@@ -22,3 +22,4 @@ from src.handlers.course.payment import *
 from src.handlers.course.feeling import *
 from src.handlers.course.request import *
 from src.handlers.course.consult import *
+from src.handlers.course.user_messages import *

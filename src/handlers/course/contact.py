@@ -4,44 +4,37 @@ import re
 import json
 from datetime import datetime, timezone
 from telebot.types import Message, Contact, ReplyKeyboardRemove
+
 from src.common import bot
 from src.config import OWNER_IDS
 from src.utils.state_manager import get_state, set_state, get_application, update_application
+from src.handlers.course.back import handle_back
+from src.utils.humanize import humanize, TERM_MAP, EXP_MAP, CONTRA_MAP, FORMAT_MAP
 
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
 
-# ---------------- HELPER ----------------
-def format_grist_datetime(value) -> str:
-    """
-    Convert Grist timestamp or ISO string to readable ISO 8601 string.
-    """
+# --- HELPER ---
+def format_human_datetime(value) -> str:
+    """Convert ISO/timestamp to human-readable UTC string"""
     if isinstance(value, (int, float)):
-        # convert Unix timestamp to ISO string in UTC
-        return datetime.fromtimestamp(value, tz=timezone.utc).isoformat()
+        dt = datetime.fromtimestamp(value, tz=timezone.utc)
     elif isinstance(value, str):
-        return value
+        try:
+            dt = datetime.fromisoformat(value)
+        except Exception:
+            dt = datetime.now(timezone.utc)
     else:
-        return datetime.now(timezone.utc).isoformat() 
+        dt = datetime.now(timezone.utc)
+    return dt.strftime("%d.%m.%Y %H:%M UTC")
 
-
-# --- VALIDATION HELPERS ---
 def is_valid_phone(text: str) -> bool:
-    """Validate phone number (simple international format)"""
     return bool(re.fullmatch(r"^\+?\d{7,15}$", text))
 
-
 def is_valid_username(text: str) -> bool:
-    """Validate Telegram username"""
-    return bool(re.fullmatch(r"^@[a-zA-Z0-9_]{5,32}$", text))
+    return bool(re.fullmatch(r"^@[\w\d_]{5,32}$", text))
 
 
-def now_iso() -> str:
-    """Return current UTC time as ISO 8601 string"""
-    return datetime.now(timezone.utc).isoformat()
-
-
-# ---------------- HANDLER ----------------
-
+# --- HANDLER ---
 @bot.message_handler(content_types=["text", "contact"])
 async def receive_contact(message: Message):
     user_id = message.from_user.id
@@ -52,9 +45,8 @@ async def receive_contact(message: Message):
     if state != "course_contact":
         return
 
-    # --- BACK ---
-    if message.text and message.text.lower() == "назад":
-        from src.handlers.course.back import handle_back
+    # --- BACK BUTTON ---
+    if message.text and message.text.lower() in {"назад", "back"}:
         await handle_back(user_id, chat_id)
         return
 
@@ -65,49 +57,43 @@ async def receive_contact(message: Message):
     elif message.text:
         contact = message.text.strip()
 
-    # --- VALIDATION ---
-    if (
-        not contact
-        or contact.lower() in FORBIDDEN_CONTACT_VALUES
-        or not (is_valid_phone(contact) or is_valid_username(contact))
-    ):
-        await bot.send_message(
-            chat_id,
-            "Пожалуйста, отправь корректный номер телефона или Telegram @username"
-        )
+    if not contact or contact.lower() in FORBIDDEN_CONTACT_VALUES:
+        await bot.send_message(chat_id, "Пожалуйста, отправь корректный номер телефона или Telegram @username")
+        return
+
+    if not (is_valid_phone(contact) or is_valid_username(contact)):
+        await bot.send_message(chat_id, "Неверный формат номера или @username, попробуй снова")
         return
 
     # --- GET APPLICATION ---
     app = await get_application(user_id)
     if not app:
-        await bot.send_message(chat_id, "Ошибка. Попробуй начать заново")
+        await bot.send_message(chat_id, "Ошибка. Попробуй начать заново 🙏")
         await set_state(user_id, "idle")
         return
 
     # --- UPDATE APPLICATION ---
     await update_application(user_id, {
         "contact": contact,
-        "current_step": "done",
-        "status": "submitted"  # <-- user submitted, pending admin
+        "current_step": "contact_submitted",
+        "status": "submitted"
     })
+    await set_state(user_id, "idle")
 
     # --- CONFIRM TO USER ---
     await bot.send_message(
         chat_id,
-        "Спасибо! Ваш контакт сохранён.",
+        "Спасибо! 💛\nАнна свяжется с тобой в ближайшее время.",
         reply_markup=ReplyKeyboardRemove()
     )
 
-    await set_state(user_id, "idle")
-
-    # --- PREPARE DATA FOR ADMIN ---
-    fields = app["fields"]
+    # --- SEND TO ADMINS ---
+    fields = app.get("fields", {})
     try:
         feelings = json.loads(fields.get("feelings") or "[]")
-    except:
+    except Exception:
         feelings = []
 
-    # --- ADMIN MESSAGE ---
     text = (
         f"Заявка #{app['id']}\n\n"
         f"Пользователь: {message.from_user.first_name or ''} {message.from_user.last_name or ''}\n"
@@ -119,10 +105,9 @@ async def receive_contact(message: Message):
         f"Запрос: {fields.get('request_type', '—')}\n"
         f"Формат: {fields.get('format', '—')}\n"
         f"Контакт: {contact}\n"
-        f"Дата создания: {format_grist_datetime(fields.get('created_at'))}"
+        f"Дата создания: {format_human_datetime(fields.get('created_at'))}"
     )
 
-    # --- SEND TO ADMINS ---
     for owner_id in OWNER_IDS:
         try:
             await bot.send_message(owner_id, text)

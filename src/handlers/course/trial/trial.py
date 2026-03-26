@@ -5,7 +5,7 @@ from telebot.types import CallbackQuery
 from datetime import datetime, timezone
 from src.common import bot
 from src.config import settings
-from src.keyboards.reply_kb import build_inline_kb
+from src.keyboards.inline_kb import build_inline_kb
 from src.utils.state_manager import set_state, update_application
 
 

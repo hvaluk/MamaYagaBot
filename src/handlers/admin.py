@@ -1,11 +1,17 @@
 # src/handlers/admin.py
 
+import json
 from telebot.types import Message, CallbackQuery
 from src.common import bot
 from src.config import ADMIN_IDS
-from src.keyboards.reply_kb import build_inline_kb
-from src.utils.humanize import humanize, FORMAT_MAP, TERM_MAP, EXP_MAP, CONTRA_MAP
-from src.utils.state_manager import get_applications, get_application, update_application
+from src.keyboards.inline_kb import build_inline_kb
+from src.utils.grist_helper import (
+    get_applications,
+    get_grist_user_by_row_id,
+    update_application_by_id,
+    get_user_messages
+)
+from src.utils.humanize import format_human_datetime
 
 
 # -------------------- Helpers --------------------
@@ -23,69 +29,113 @@ async def admin_menu(message: Message):
     await bot.send_message(message.chat.id, "Админ-панель", reply_markup=kb)
 
 
-# -------------------- Applications --------------------
+# -------------------- REQUESTS --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:requests")
-async def admin_applications(call: CallbackQuery):
+async def admin_requests(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
+
     await bot.answer_callback_query(call.id)
 
-    apps = await get_applications(filter_status="new")
+    # Новые заявки
+    apps = await get_applications(filter_status="submitted")
     if not apps:
-        await bot.send_message(call.message.chat.id, "Новых заявок нет")
+        await bot.send_message(call.message.chat.id, "Ожидающих заявок нет")
         return
 
     for app in apps:
-        user = app.get("user", {})
+        f = app["fields"]
+        user = await get_grist_user_by_row_id(f.get("User"))
+
+        created_at = format_human_datetime(f.get("created_at"))
+        feelings_list = []
+        try:
+            feelings_list = json.loads(f.get("feelings") or "[]")
+        except Exception:
+            pass
+
         text = (
-            f"Заявка #{app['id']}\n"
-            f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"
-            f"Username: @{user.get('username', '—')}\n"
-            f"Срок беременности: {humanize(app.get('pregnancy_term', ''), TERM_MAP)}\n"
-            f"Опыт йоги: {humanize(app.get('yoga_experience', ''), EXP_MAP)}\n"
-            f"Противопоказания: {humanize(app.get('contraindications', ''), CONTRA_MAP)}\n"
-            f"Формат: {humanize(app.get('format', ''), FORMAT_MAP)}\n"
-            f"Контакт: {app.get('contact', '—')}\n"
-            f"Дата создания: {app.get('created_at', '')}\n"
-            f"Статус: {app.get('status', '')}"
+            f"Заявка #{app['id']}\n\n"
+            f"Пользователь: {user.get('FirstName', '')} {user.get('LastName', '')}\n"
+            f"Username: @{user.get('Username', '—')}\n"
+            f"Telegram ID: {user.get('TelegramID', '—')}\n\n"
+            f"Срок: {f.get('pregnancy_term', '—')}\n"
+            f"Чувства: {', '.join(feelings_list) if feelings_list else '—'}\n"
+            f"Опыт: {f.get('yoga_experience', '—')}\n"
+            f"Запрос: {f.get('request_type', '—')}\n"
+            f"Формат: {f.get('format', '—')}\n"
+            f"Контакт: {f.get('contact', '—')}\n"
+            f"Дата создания: {created_at}\n"
+            f"Статус: {f.get('status', '—')}"
         )
-        kb = await build_inline_kb("admin_request_kb")
+
+        kb = await build_inline_kb("admin_request_kb", app_id=app["id"])
         await bot.send_message(call.message.chat.id, text, reply_markup=kb)
 
 
-# -------------------- Actions on applications --------------------
+# -------------------- REQUEST ACTIONS --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin:req_"))
-async def admin_request_action(call: CallbackQuery):
+async def admin_request_actions(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
 
-    parts = call.data.split(":")
-    action = parts[1]
-    app_id = int(parts[2])
+    _, action, app_id = call.data.split(":")
+    app_id = int(app_id)
 
-    app = await get_application(app_id)
-    if not app:
-        await bot.answer_callback_query(call.id, "Заявка не найдена")
+    # Меняем статус заявки
+    if action == "req_done":
+        await update_application_by_id(app_id, {"status": "done"})
+        await bot.answer_callback_query(call.id, "Выполнено ✅")
+    elif action == "req_reject":
+        await update_application_by_id(app_id, {"status": "rejected"})
+        await bot.answer_callback_query(call.id, "Отклонено ❌")
+
+    # Удаляем старое сообщение
+    try:
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
+    except Exception:
+        pass
+
+    # Отправляем оставшиеся заявки
+    apps = await get_applications(filter_status="submitted")
+    if not apps:
+        await bot.send_message(call.message.chat.id, "Ожидающих заявок нет")
         return
 
-    if action == "req_done":
-        await update_application(app_id, {"status": "processed"})
-    elif action == "req_reject":
-        await update_application(app_id, {"status": "rejected"})
+    for app in apps:
+        f = app["fields"]
+        user = await get_grist_user_by_row_id(f.get("User"))
+        created_at = format_human_datetime(f.get("created_at"))
+        feelings_list = []
+        try:
+            feelings_list = json.loads(f.get("feelings") or "[]")
+        except Exception:
+            pass
 
-    await bot.edit_message_text(
-        f"Заявка #{app_id}\nСтатус: {app.get('status', '')}",
-        call.message.chat.id,
-        call.message.message_id
-    )
-    await bot.answer_callback_query(call.id, "Статус обновлён")
+        text = (
+            f"Заявка #{app['id']}\n\n"
+            f"Пользователь: {user.get('FirstName', '')} {user.get('LastName', '')}\n"
+            f"Username: @{user.get('Username', '—')}\n"
+            f"Telegram ID: {user.get('TelegramID', '—')}\n\n"
+            f"Срок: {f.get('pregnancy_term', '—')}\n"
+            f"Чувства: {', '.join(feelings_list) if feelings_list else '—'}\n"
+            f"Опыт: {f.get('yoga_experience', '—')}\n"
+            f"Запрос: {f.get('request_type', '—')}\n"
+            f"Формат: {f.get('format', '—')}\n"
+            f"Контакт: {f.get('contact', '—')}\n"
+            f"Дата создания: {created_at}\n"
+            f"Статус: {f.get('status', '—')}"
+        )
+        kb = await build_inline_kb("admin_request_kb", app_id=app["id"])
+        await bot.send_message(call.message.chat.id, text, reply_markup=kb)
 
 
-# -------------------- Pending payments --------------------
+# -------------------- PAYMENTS --------------------
 @bot.callback_query_handler(func=lambda c: c.data == "admin:payments")
 async def admin_payments(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
+
     await bot.answer_callback_query(call.id)
 
     apps = await get_applications(filter_status="paid_pending")
@@ -94,80 +144,88 @@ async def admin_payments(call: CallbackQuery):
         return
 
     for app in apps:
-        user = app.get("user", {})
+        f = app["fields"]
+        user = await get_grist_user_by_row_id(f.get("User"))
+        created_at = format_human_datetime(f.get("created_at"))
+
         text = (
-            f"Оплата ожидает подтверждения\n"
-            f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"
-            f"Username: @{user.get('username', '—')}\n"
-            f"Источник: {app.get('entry_point', '')}\n"
-            f"Формат: {humanize(app.get('format', ''), FORMAT_MAP)}\n"
-            f"Дата создания: {app.get('created_at', '')}"
+            f"Оплата ожидает подтверждения\n\n"
+            f"Пользователь: {user.get('FirstName', '')} {user.get('LastName', '')}\n"
+            f"Username: @{user.get('Username', '—')}\n"
+            f"Источник: {f.get('entry_point', '—')}\n"
+            f"Формат: {f.get('format', '—')}\n"
+            f"Дата создания: {created_at}"
         )
-        kb = await build_inline_kb("admin_payment_kb")
+
+        kb = await build_inline_kb("admin_payment_kb", app_id=app["id"])
         await bot.send_message(call.message.chat.id, text, reply_markup=kb)
 
 
-# -------------------- Payment confirmation / rejection --------------------
+# -------------------- PAYMENT ACTIONS --------------------
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin:paid") or c.data.startswith("admin:not_paid"))
-async def admin_payment_action(call: CallbackQuery):
+async def admin_payment_actions(call: CallbackQuery):
     if not is_admin(call.from_user.id):
         return
 
     action, app_id = call.data.split(":")[1:]
     app_id = int(app_id)
 
-    app = await get_application(app_id)
-    if not app:
-        await bot.answer_callback_query(call.id, "Заявка не найдена")
-        return
-
     if action == "paid":
-        await update_application(app_id, {"status": "paid"})
+        await update_application_by_id(app_id, {"status": "paid"})
+        await bot.answer_callback_query(call.id, "Оплачено ✅")
     elif action == "not_paid":
-        await update_application(app_id, {"status": "rejected"})
+        await update_application_by_id(app_id, {"status": "rejected"})
+        await bot.answer_callback_query(call.id, "Не оплачено ❌")
 
-    await bot.edit_message_text(
-        f"Заявка #{app_id}\nСтатус: {app.get('status', '')}",
-        call.message.chat.id,
-        call.message.message_id
-    )
-    await bot.answer_callback_query(call.id, "Статус обновлён")
+    # Обновляем список оплат
+    try:
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
+    except Exception:
+        pass
 
-
-# -------------------- User management --------------------
-@bot.callback_query_handler(func=lambda c: c.data == "admin:users")
-async def admin_users(call: CallbackQuery):
-    if not is_admin(call.from_user.id):
-        return
-    await bot.answer_callback_query(call.id)
-    kb = await build_inline_kb("admin_users_filter_kb")
-    await bot.send_message(call.message.chat.id, "Выберите фильтр пользователей:", reply_markup=kb)
-
-
-@bot.callback_query_handler(func=lambda c: c.data.startswith("admin_users:"))
-async def admin_users_filter(call: CallbackQuery):
-    if not is_admin(call.from_user.id):
-        return
-    await bot.answer_callback_query(call.id)
-
-    _, filter_type = call.data.split(":")
-    apps = await get_applications(filter_type=filter_type)
-
+    apps = await get_applications(filter_status="paid_pending")
     if not apps:
-        await bot.send_message(call.message.chat.id, "Нет пользователей по выбранному фильтру")
+        await bot.send_message(call.message.chat.id, "Ожидающих оплат нет")
         return
 
     for app in apps:
-        user = app.get("user", {})
-        followup = "Нет follow-up" if app.get("followup_stage") == 99 else f"Этап: {app.get('followup_stage')}"
+        f = app["fields"]
+        user = await get_grist_user_by_row_id(f.get("User"))
+        created_at = format_human_datetime(f.get("created_at"))
+
         text = (
-            f"Пользователь: {user.get('first_name', '')} {user.get('last_name', '')}\n"
-            f"Username: @{user.get('username', '—')}\n"
-            f"Формат: {humanize(app.get('format', ''), FORMAT_MAP)}\n"
-            f"Статус заявки: {app.get('status', '')}\n"
-            f"Follow-up: {followup}\n"
-            f"Источник: {app.get('entry_point', '')}\n"
-            f"Контакт: {app.get('contact', '—')}\n"
-            f"Дата создания: {app.get('created_at', '')}"
+            f"Оплата ожидает подтверждения\n\n"
+            f"Пользователь: {user.get('FirstName', '')} {user.get('LastName', '')}\n"
+            f"Username: @{user.get('Username', '—')}\n"
+            f"Источник: {f.get('entry_point', '—')}\n"
+            f"Формат: {f.get('format', '—')}\n"
+            f"Дата создания: {created_at}"
+        )
+        kb = await build_inline_kb("admin_payment_kb", app_id=app["id"])
+        await bot.send_message(call.message.chat.id, text, reply_markup=kb)
+
+
+# -------------------- MESSAGES --------------------
+@bot.callback_query_handler(func=lambda c: c.data == "admin:messages")
+async def admin_messages(call: CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+
+    await bot.answer_callback_query(call.id)
+
+    messages = await get_user_messages()
+    if not messages:
+        await bot.send_message(call.message.chat.id, "Сообщений нет")
+        return
+
+    for msg in messages:
+        f = msg["fields"]
+        user = await get_grist_user_by_row_id(f.get("User"))
+
+        text = (
+            f"Сообщение\n\n"
+            f"Пользователь: {user.get('FirstName', '')} {user.get('LastName', '')}\n"
+            f"Username: @{user.get('Username', '—')}\n\n"
+            f"{f.get('MessageText', '')}"
         )
         await bot.send_message(call.message.chat.id, text)
