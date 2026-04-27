@@ -1,15 +1,14 @@
-# main.py
-
 import asyncio
 import logging
 
+print("LOADING HANDLERS...")
+import src.handlers
+print("HANDLERS LOADED")
+
 from src.common import bot
-from src.handlers import *  
 from src.utils.followup import followup_worker
 from src.config import config_updater_worker, settings
 
-
-# --- LOGGING CONFIG ---
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,32 +16,34 @@ logging.basicConfig(
 )
 
 
-# --- MAIN APP ---
+async def start_background_tasks():
+    # initial config load
+    settings.refresh()
+
+    asyncio.create_task(
+        config_updater_worker(settings.FOLLOWUP_CHECK_INTERVAL)
+    )
+
+    asyncio.create_task(
+        followup_worker()
+    )
+
 
 async def main():
     logging.info("🚀 Bot is starting...")
 
-    # --- Initial config load ---
-    settings.refresh()
+    # старт фоновых задач
+    await start_background_tasks()
 
-    # --- Background workers ---
-    asyncio.create_task(config_updater_worker(settings.FOLLOWUP_CHECK_INTERVAL))
-    asyncio.create_task(followup_worker())
+    logging.info("🤖 Bot polling started")
 
-    # --- Polling loop with auto-restart ---
-    while True:
-        try:
-            logging.info("🤖 Bot polling started")
-            await bot.infinity_polling(timeout=10, request_timeout=20)
+    # ❗ ВАЖНО: await, не loop и не create_task
+    await bot.infinity_polling(
+        timeout=10,
+        request_timeout=20,
+        skip_pending=True
+    )
 
-        except Exception as e:
-            logging.error(f"❌ Polling error: {e}", exc_info=True)
-
-            # Prevent crash loop
-            await asyncio.sleep(5)
-
-
-# --- ENTRYPOINT ---
 
 if __name__ == "__main__":
     try:

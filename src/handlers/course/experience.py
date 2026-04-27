@@ -12,30 +12,33 @@ from src.utils.state_manager import get_state, set_state, update_application
 async def course_experience(call: CallbackQuery):
 
     user_id = call.from_user.id
+    chat_id = call.message.chat.id
 
-    # --- STATE CHECK ---
+    # --- STATE GUARD ---
     state = await get_state(user_id)
     if state != "course_experience":
-        return
+        return await bot.answer_callback_query(call.id)
 
     await bot.answer_callback_query(call.id)
 
-    value = EXP_MAP[call.data]
+    # --- SAFE MAP ---
+    value = EXP_MAP.get(call.data)
+    if not value:
+        return
 
-    # --- UPDATE APPLICATION ---
+    # --- SAVE DATA (ONLY DATA LAYER) ---
     await update_application(user_id, {
         "yoga_experience": value
     })
 
-    # --- NEXT STEP ---
+    # --- FSM TRANSITION (ONLY FLOW LAYER) ---
     await set_state(user_id, "course_request")
 
-    # --- SEND MESSAGE ---
-    text = settings.get_text("ASK_REQUEST")
-  
+    # --- NEXT STEP UI ---
     kb = await build_inline_kb("request_kb")
+
     await bot.send_message(
-        call.message.chat.id,
-        text,
+        chat_id,
+        settings.get_text("ASK_REQUEST"),
         reply_markup=kb
     )
