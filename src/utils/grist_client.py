@@ -30,12 +30,19 @@ class GristClient:
 
     def insert(self, table: str, fields: dict):
         payload = {"records": [{"fields": fields}]}
+
         try:
             r = requests.post(self._url(table), headers=HEADERS, json=payload, timeout=10)
+
+            print("GRIST RESPONSE:", r.status_code, r.text)
+
             r.raise_for_status()
-            return r.json()
+
+            data = r.json()
+            return data
+
         except Exception as e:
-            print(f"❌ GRIST INSERT ERROR [{table}]:", e)
+            print(f"❌ GRIST INSERT ERROR [{table}]:", repr(e))
             return None
 
     def update(self, table: str, record_id: int, fields: dict):

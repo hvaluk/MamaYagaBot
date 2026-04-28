@@ -7,7 +7,6 @@ from src.utils.grist_helper import get_grist_user, create_user
 from src.utils.state_manager import set_state
 from src.config import settings
 
-
 @bot.message_handler(commands=["start", "help"])
 async def send_welcome(message: Message):
 
@@ -16,29 +15,25 @@ async def send_welcome(message: Message):
 
     print(f"🚀 /start from {user_id}")
 
-    # ---------- USER ----------
-    user = await get_grist_user(user_id)
+    user_record = await get_grist_user(user_id)
 
-    if not user:
+    if not user_record:
         print("👤 Creating new user")
-        user = await create_user(message.from_user)
+        user_record = await create_user(message.from_user)
 
-        text = settings.get_text(
-            "WELCOME",
-            name=message.from_user.first_name or ""
-        )
+        name = message.from_user.first_name or ""
+        text = settings.get_text("WELCOME", name=name)
+
     else:
         print("👤 Returning user")
 
-        text = settings.get_text(
-            "RETURNING_WELCOME",
-            name=message.from_user.first_name or ""
-        )
+        fields = user_record.get("fields", {})
 
-    # ---------- RESET STATE ----------
+        name = fields.get("FirstName") or ""
+        text = settings.get_text("RETURNING_WELCOME", name=name)
+
     await set_state(user_id, "idle")
 
-    # ---------- UI ----------
     kb = await build_inline_kb("main_kb")
 
     await bot.send_message(

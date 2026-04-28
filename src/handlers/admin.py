@@ -70,7 +70,7 @@ async def admin_requests(call: CallbackQuery):
 
         f = app.get("fields", {})
         user = await get_grist_user_by_row_id(f.get("User")) or {}
-
+        
         feelings = parse_json(f.get("feelings"))
 
         text = (
@@ -173,8 +173,8 @@ async def admin_message_actions(call: CallbackQuery):
         return
 
     status_map = {
-        "msg_read": "прочитано",
-        "msg_answered": "отвечено",
+        "msg_read": "read",
+        "msg_answered": "answered",
     }
 
     new_status = status_map.get(action)

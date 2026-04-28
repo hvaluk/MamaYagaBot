@@ -1,3 +1,5 @@
+# main.py
+
 import asyncio
 import logging
 
@@ -32,12 +34,11 @@ async def start_background_tasks():
 async def main():
     logging.info("🚀 Bot is starting...")
 
-    # старт фоновых задач
+    # start background tasks
     await start_background_tasks()
 
     logging.info("🤖 Bot polling started")
 
-    # ❗ ВАЖНО: await, не loop и не create_task
     await bot.infinity_polling(
         timeout=10,
         request_timeout=20,
