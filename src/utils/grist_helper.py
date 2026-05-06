@@ -201,16 +201,27 @@ def create_user_message(user_row_id, application_id, message_text, state):
     return result
 
 
-def get_user_messages():
+async def get_user_messages(statuses=None):
     records = grist.fetch_all("UserMessages")
 
-    return [
-        {
+    result = []
+
+    for rec in records:
+        fields = rec.get("fields", {})
+
+        status = (fields.get("status") or "new").lower()
+
+        if statuses and status not in statuses:
+            continue
+
+        result.append({
             "id": rec["id"],
-            "fields": rec.get("fields", {})
-        }
-        for rec in records
-    ]
+            "fields": fields
+        })
+
+    result.sort(key=lambda x: x["id"], reverse=True)
+
+    return result
 
 async def update_user_message(message_id: int, fields: dict):
     return grist.update("UserMessages", message_id, fields)

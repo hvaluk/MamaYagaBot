@@ -11,7 +11,8 @@ from src.utils.grist_helper import (
     get_applications,
     update_application_by_id,
     get_grist_user_by_row_id,   
-    get_user_messages
+    get_user_messages,
+    update_user_message
 )
 
 from src.utils.humanize import format_human_datetime
@@ -115,6 +116,10 @@ async def admin_request_actions(call: CallbackQuery):
         await update_application_by_id(app_id, {
             "status": status_map[action]
         })
+        try:
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+        except:
+            pass
 
     await bot.answer_callback_query(call.id, "Обновлено ✅")
 
@@ -128,12 +133,7 @@ async def admin_messages(call: CallbackQuery):
 
     await bot.answer_callback_query(call.id)
 
-    messages = await get_user_messages()
-    messages = [
-        m for m in messages
-        if m["fields"].get("status") not in ["answered"]
-    ]
-
+    messages = await get_user_messages(statuses=["new", "read"])
 
     if not messages:
         await bot.send_message(call.message.chat.id, "Новых сообщений нет")
@@ -141,15 +141,17 @@ async def admin_messages(call: CallbackQuery):
 
     for msg in messages:
 
-        f = msg.get("fields", {})
+        f = msg["fields"]
         user = await get_grist_user_by_row_id(f.get("User")) or {}
+
+        status = (f.get("status") or "new").lower()
 
         text = (
             f"💬 Сообщение #{msg['id']}\n\n"
             f"Пользователь: {safe(user.get('FirstName'))} {safe(user.get('LastName'))}\n"
             f"Username: @{safe(user.get('Username'))}\n"
             f"Telegram ID: {safe(user.get('TelegramID'))}\n\n"
-            f"Статус: {safe(f.get('status'), 'new')}\n\n"
+            f"Статус: {status}\n\n"
             f"{f.get('MessageText','')}"
         )
 
@@ -185,11 +187,9 @@ async def admin_message_actions(call: CallbackQuery):
 
     # --- UPDATE ---
     try:
-        from src.utils.grist_client import grist
-
-        grist.update("UserMessages", msg_id, {
-            "status": new_status
-        })
+        await update_user_message(msg_id, {
+        "status": new_status
+    })
     except Exception as e:
         print("❌ UPDATE ERROR:", e)
         await bot.answer_callback_query(call.id, "Ошибка")
@@ -199,7 +199,7 @@ async def admin_message_actions(call: CallbackQuery):
     await bot.answer_callback_query(call.id, f"Статус: {new_status}")
 
 
-    if new_status == "answered":
+    if new_status in ["read", "answered"]:
         try:
             await bot.delete_message(call.message.chat.id, call.message.message_id)
         except:
