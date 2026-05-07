@@ -1,17 +1,42 @@
 # src/handlers/course/consult.py
 
+from datetime import datetime, timezone
 from telebot.types import CallbackQuery
+
 from src.common import bot
 from src.keyboards.inline_kb import build_inline_kb
 from src.keyboards.reply_kb import build_reply_kb
 from src.config import settings
-from src.utils.state_manager import set_state
+from src.utils.state_manager import set_state, update_application
+
+
+# ------------------- OFFER ) -------------------
+@bot.callback_query_handler(func=lambda c: c.data == "consult_offer")
+async def consult_offer(call: CallbackQuery):
+   
+    await bot.answer_callback_query(call.id)
+
+    user_id = call.from_user.id
+
+    #  follow-up
+    await update_application(user_id, {
+        "is_trial": True,
+        "followup_stage": 0,
+        "followup_last_sent_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    kb = await build_inline_kb("consult_offer_kb")
+
+    await bot.send_message(
+        call.message.chat.id,
+        settings.get_text("CONSULT_OFFER_TEXT"),
+        reply_markup=kb
+    )
 
 
 # ------------------- INFO -------------------
 @bot.callback_query_handler(func=lambda c: c.data == "consult_info")
 async def consult_info(call: CallbackQuery):
-
     await bot.answer_callback_query(call.id)
 
     kb = await build_inline_kb("consult_info_kb")
@@ -23,13 +48,20 @@ async def consult_info(call: CallbackQuery):
     )
 
 
-# ------------------- START -------------------
+# ------------------- START (stop follow-up) -------------------
 @bot.callback_query_handler(func=lambda c: c.data == "consult_start")
 async def consult_start(call: CallbackQuery):
-
     await bot.answer_callback_query(call.id)
 
-    await set_state(call.from_user.id, "course_contact")
+    user_id = call.from_user.id
+
+    # full stop follow-up
+    await update_application(user_id, {
+        "followup_stage": 99,
+        "status": "contact_requested"
+    })
+
+    await set_state(user_id, "course_contact")
 
     kb = await build_reply_kb("contact_request_kb")
 
@@ -43,10 +75,17 @@ async def consult_start(call: CallbackQuery):
 # ------------------- LATER -------------------
 @bot.callback_query_handler(func=lambda c: c.data == "consult_later")
 async def consult_later(call: CallbackQuery):
-
     await bot.answer_callback_query(call.id)
 
-    await set_state(call.from_user.id, "course_message")
+    user_id = call.from_user.id
+
+    await set_state(user_id, "course_message")
+
+    # restart follow-up
+    await update_application(user_id, {
+        "followup_stage": 0,
+        "followup_last_sent_at": datetime.now(timezone.utc).isoformat()
+    })
 
     kb = await build_inline_kb("consult_later_kb")
 
@@ -56,16 +95,16 @@ async def consult_later(call: CallbackQuery):
         reply_markup=kb
     )
 
-
 # ------------------- ASK QUESTION -------------------
 @bot.callback_query_handler(func=lambda c: c.data == "consult_ask")
 async def consult_ask(call: CallbackQuery):
-
     await bot.answer_callback_query(call.id)
 
-    await set_state(call.from_user.id, "course_message")
+    user_id = call.from_user.id
+
+    await set_state(user_id, "course_message")
 
     await bot.send_message(
         call.message.chat.id,
-        "Напиши свой вопрос 💛\nЯ передам его Анне и она лично тебе ответит"
+        settings.get_text("CONSULT_ASK_TEXT")
     )

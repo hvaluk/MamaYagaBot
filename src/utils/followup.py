@@ -2,103 +2,298 @@
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-import requests
 
 from src.common import bot
-from src.config import settings, GRIST_BASE_URL, GRIST_DOC_ID, GRIST_API_KEY
+from src.config import settings
 from src.keyboards.inline_kb import build_inline_kb
 
-HEADERS = {"Authorization": f"Bearer {GRIST_API_KEY}"}
+from src.utils.grist_helper import (
+    get_followup_applications,
+    get_telegram_id_by_user_row,
+    update_application_by_row_id,
+    get_grist_user_by_row_id,
+)
 
 
-# --- TIME HELPERS ---
+# =========================================================
+# TIME HELPERS
+# =========================================================
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def parse_iso(dt_str: str | None) -> datetime | None:
-    if not dt_str:
+def parse_dt(value) -> datetime | None:
+
+    if not value:
         return None
-    return datetime.fromisoformat(dt_str)
+
+    try:
+
+        if isinstance(value, (int, float)):
+            return datetime.fromtimestamp(
+                value,
+                tz=timezone.utc,
+            )
+
+        if isinstance(value, str):
+
+            dt = datetime.fromisoformat(
+                value.replace("Z", "+00:00")
+            )
+
+            if dt.tzinfo is None:
+                dt = dt.replace(
+                    tzinfo=timezone.utc
+                )
+
+            return dt
+
+    except Exception:
+        return None
+
+    return None
 
 
-# --- GRIST HELPERS ---
-def get_applications():
-    """Fetch all active applications from Grist."""
-    url = f"{GRIST_BASE_URL}{GRIST_DOC_ID}/tables/Applications/records"
-    r = requests.get(url, headers=HEADERS, timeout=10)
-    r.raise_for_status()
-    return r.json().get("records", [])
+# =========================================================
+# SEND FOLLOWUP MESSAGE
+# =========================================================
+
+async def send_followup_message(
+    telegram_id: int | str,
+    text: str,
+    kb_name: str,
+) -> bool:
+
+    try:
+
+        kb = await build_inline_kb(kb_name)
+
+        await bot.send_message(
+            chat_id=int(telegram_id),
+            text=text,
+            reply_markup=kb,
+        )
+
+        return True
+
+    except Exception as e:
+
+        print(
+            f"[FOLLOWUP] send error [{telegram_id}]: {e}"
+        )
+
+        return False
 
 
-def update_application(record_id: int, fields: dict):
-    """Update application fields in Grist."""
-    url = f"{GRIST_BASE_URL}{GRIST_DOC_ID}/tables/Applications/records"
-    payload = {"records": [{"id": record_id, "fields": fields}]}
-    requests.patch(url, headers=HEADERS, json=payload, timeout=10)
+# =========================================================
+# FOLLOWUP WORKER
+# =========================================================
 
-
-# --- WORKER ---
 async def followup_worker():
-    """
-    Background worker that sends follow-up messages based on stage and elapsed time.
-    Fully works via Grist.
-    """
+
+    print("[FOLLOWUP] worker started")
+
     while True:
+
         try:
+
             now = utcnow()
-            records = get_applications()
 
-            for rec in records:
-                fields = rec.get("fields", {})
+            applications = await get_followup_applications()
 
-                user_id = fields.get("user_id")
-                stage = fields.get("followup_stage", 0)
-                status = fields.get("status")
-                trial_time = parse_iso(fields.get("trial_opened_at"))
-                last_sent = parse_iso(fields.get("followup_last_sent_at")) or trial_time
+            for app in applications:
 
-                if not user_id or not trial_time:
-                    continue
+                try:
 
-                # Skip paid users
-                if status in ("paid", "paid_pending"):
-                    update_application(rec["id"], {"followup_stage": 99})
-                    continue
+                    row_id = app.get("id")
+                    fields = app.get("fields", {})
 
-                delta = now - trial_time
+                    if not row_id:
+                        continue
 
-                # --- 60 MIN FOLLOW-UP ---
-                if stage == 0 and delta >= timedelta(minutes=60):
-                    kb = await build_inline_kb("followup_60min_kb")
-                    text = settings.get_text("FOLLOWUP_FIRST")
-                    await bot.send_message(user_id, text, reply_markup=kb)
-                    update_application(rec["id"], {
-                        "followup_stage": 1,
-                        "followup_last_sent_at": now.isoformat()
-                    })
+                    user_row_id = fields.get("User")
 
-                # --- 24H FOLLOW-UP ---
-                elif stage == 1 and delta >= timedelta(hours=24):
-                    kb = await build_inline_kb("followup_24h_kb")
-                    text = settings.get_text("FOLLOWUP_24H")
-                    await bot.send_message(user_id, text, reply_markup=kb)
-                    update_application(rec["id"], {
-                        "followup_stage": 2,
-                        "followup_last_sent_at": now.isoformat()
-                    })
+                    if not user_row_id:
+                        continue
 
-                # --- 3 DAYS REMINDER ---
-                elif stage == 3 and last_sent and (now - last_sent >= timedelta(days=3)):
-                    kb = await build_inline_kb("followup_3days_kb")
-                    text = settings.get_text("FOLLOWUP_3D", name="✨")
-                    await bot.send_message(user_id, text, reply_markup=kb)
-                    update_application(rec["id"], {
-                        "followup_stage": 99
-                    })
+                    # =================================================
+                    # STOP CONDITIONS
+                    # =================================================
 
-        except Exception as e:
-            print(f"❌ Followup worker error: {e}")
+                    status = (
+                        fields.get("status") or ""
+                    ).lower()
 
-        # Sleep before next check
-        await asyncio.sleep(settings.FOLLOWUP_CHECK_INTERVAL)
+                    if status in (
+                        "done",
+                        "paid",
+                        "contact_requested",
+                    ):
+                        continue
+
+                    # =================================================
+                    # FOLLOWUP STAGE
+                    # =================================================
+
+                    stage = int(
+                        fields.get("followup_stage") or 0
+                    )
+
+                    # =================================================
+                    # TIME BASE
+                    # =================================================
+
+                    last_sent = parse_dt(
+                        fields.get("followup_last_sent_at")
+                    )
+
+                    created_at = parse_dt(
+                        fields.get("created_at")
+                    )
+
+                    base_time = last_sent or created_at
+
+                    if not base_time:
+                        continue
+
+                    delta = now - base_time
+
+                    # =================================================
+                    # TELEGRAM ID
+                    # =================================================
+
+                    telegram_id = (
+                        await get_telegram_id_by_user_row(
+                            user_row_id
+                        )
+                    )
+
+                    if not telegram_id:
+                        continue
+
+                    # =================================================
+                    # USER DATA
+                    # =================================================
+
+                    user_data = (
+                        await get_grist_user_by_row_id(
+                            user_row_id
+                        )
+                    ) or {}
+
+                    first_name = (
+                        user_data.get("FirstName")
+                        or ""
+                    ).strip()
+
+                    username = (
+                        user_data.get("Username")
+                        or ""
+                    ).strip()
+
+                    display_name = (
+                        first_name or username
+                    )
+
+                    # =================================================
+                    # STAGE 0 -> FIRST FOLLOWUP
+                    # =================================================
+
+                    # PROD:
+                    # timedelta(hours=24)
+
+                    if (
+                        stage == 0
+                        and delta >= timedelta(seconds=24)
+                    ):
+
+                        text = settings.get_text(
+                            "FOLLOWUP_FIRST"
+                        )
+
+                        success = await send_followup_message(
+                            telegram_id=telegram_id,
+                            text=text,
+                            kb_name="followup_24h_kb",
+                        )
+
+                        if success:
+
+                            await update_application_by_row_id(
+                                row_id,
+                                {
+                                    "followup_stage": 1,
+                                    "followup_last_sent_at": now.isoformat(),
+                                },
+                            )
+
+                            print(
+                                f"[FOLLOWUP] stage 0 -> 1 | {telegram_id}"
+                            )
+
+                    # =================================================
+                    # STAGE 1 -> SECOND FOLLOWUP
+                    # =================================================
+
+                    # PROD:
+                    # timedelta(days=3)
+
+                    elif (
+                        stage == 1
+                        and delta >= timedelta(seconds=30)
+                    ):
+
+                        # ---------- GREETING ----------
+
+                        if display_name:
+                            greeting = f"Привет {display_name}\n\n"
+                        else:
+                            greeting = "Привет 💛\n\n"
+
+                        # ---------- TEXT ----------
+
+                        text = (
+                            greeting
+                            + settings.get_text("FOLLOWUP_3D")
+                        )
+
+                        # ---------- SEND ----------
+
+                        success = await send_followup_message(
+                            telegram_id=telegram_id,
+                            text=text,
+                            kb_name="followup_3days_kb",
+                        )
+
+                        # ---------- UPDATE ----------
+
+                        if success:
+
+                            await update_application_by_row_id(
+                                row_id,
+                                {
+                                    "followup_stage": 99,
+                                    "followup_last_sent_at": now.isoformat(),
+                                },
+                            )
+
+                            print(
+                                f"[FOLLOWUP] stage 1 -> done | {telegram_id}"
+                            )
+
+                except Exception as app_error:
+
+                    print(
+                        f"[FOLLOWUP] app error: {app_error}"
+                    )
+
+        except Exception as worker_error:
+
+            print(
+                f"[FOLLOWUP] worker error: {worker_error}"
+            )
+
+        await asyncio.sleep(
+            settings.FOLLOWUP_CHECK_INTERVAL
+        )

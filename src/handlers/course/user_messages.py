@@ -77,15 +77,17 @@ async def handle_user_messages(message: Message):
         print("❌ SAVE MESSAGE ERROR:", e)
         return
 
-    # --- RESET FOLLOWUP ---
+    # --- STOP FOLLOWUP (user engaged) ---
     if app:
         try:
             await update_application(user_id, {
-                "followup_stage": 0,
-                "followup_last_sent_at": None
+                "followup_stage": 99,  # Полная остановка
+                "status": "message_received"
             })
+            print(f"✅ Follow-up stopped for {user_id} (message received)")
         except Exception as e:
-            print("❌ FOLLOWUP RESET ERROR:", e)
+            print("❌ FOLLOWUP STOP ERROR:", e)
+
 
     # --- ADMIN NOTIFY ---
     try:

@@ -10,6 +10,7 @@ print("HANDLERS LOADED")
 from src.common import bot
 from src.utils.followup import followup_worker
 from src.config import config_updater_worker, settings
+from src.utils.broadcast import broadcast_worker
 
 
 logging.basicConfig(
@@ -19,15 +20,15 @@ logging.basicConfig(
 
 
 async def start_background_tasks():
-    # initial config load
     settings.refresh()
-
     asyncio.create_task(
         config_updater_worker(settings.FOLLOWUP_CHECK_INTERVAL)
     )
-
     asyncio.create_task(
         followup_worker()
+    )
+    asyncio.create_task(
+        broadcast_worker()
     )
 
 
@@ -44,6 +45,7 @@ async def main():
         request_timeout=20,
         skip_pending=True
     )
+
 
 
 if __name__ == "__main__":

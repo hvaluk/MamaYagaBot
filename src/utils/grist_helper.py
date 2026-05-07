@@ -1,7 +1,10 @@
 # src/utils/grist_helper.py
 
-from datetime import datetime, timezone
 import json
+import asyncio
+import requests
+from datetime import datetime, timezone
+
 
 from src.utils.grist_client import grist
 from src.config import ADMIN_IDS, OWNER_IDS
@@ -20,19 +23,6 @@ async def get_grist_user(user_id: int):
 
     for rec in records:
         if str(rec.get("fields", {}).get("TelegramID")) == str(user_id):
-            return rec  
-
-    return None
-
-
-async def get_grist_user_by_row_id(row_id: int):
-    if not row_id:
-        return None
-
-    records = grist.fetch_all("Users")
-
-    for rec in records:
-        if rec.get("id") == row_id:
             return rec  
 
     return None
@@ -148,37 +138,6 @@ async def get_applications(filter_status=None):
 
 # ===================== USER MESSAGES =====================
 
-# async def create_user_message(user_row_id: int, application_id: int | None, message_text: str, state: str):
-
-#     if not user_row_id or not message_text:
-#         return None
-
-#     payload = {
-#         "User": user_row_id,
-#         "MessageText": message_text,
-#         "State": state,
-#         "CreatedAt": now_iso(),
-#         "status": "new"
-       
-#     }
-
-#     if application_id:
-#         payload["Application"] = application_id
-
-#     return grist.insert("UserMessages", payload)
-
-
-# async def get_user_messages():
-#     records = grist.fetch_all("UserMessages")
-
-#     result = []
-#     for rec in records:
-#         result.append({
-#             "id": rec["id"],
-#             "fields": rec.get("fields", {})
-#         })
-
-#     return result
 def create_user_message(user_row_id, application_id, message_text, state):
 
     if not user_row_id or not message_text:
@@ -186,6 +145,7 @@ def create_user_message(user_row_id, application_id, message_text, state):
 
     payload = {
         "User": user_row_id,
+        "Application": application_id,  
         "MessageText": message_text,
         "State": state,
         "CreatedAt": now_iso(),
@@ -248,3 +208,41 @@ async def get_buttons_for_keyboard(name: str) -> list[dict]:
         })
 
     return sorted(buttons, key=lambda x: x["row_order"])
+
+## ===================== FOLLOW-UP =====================
+
+async def get_followup_applications():
+    records = grist.fetch_all("Applications")
+
+    result = []
+
+    for rec in records:
+        fields = rec.get("fields", {})
+
+        # Only applications in progress
+        if fields.get("status") in ("done", "paid", "contact_requested"):
+            continue
+
+        if fields.get("followup_stage") == 99:
+            continue
+
+        result.append(rec)
+
+    return result
+
+
+async def update_application_by_row_id(row_id: int, fields: dict):
+    if not row_id:
+        return False
+
+    return grist.update("Applications", row_id, fields)
+
+
+async def get_telegram_id_by_user_row(user_row_id: int):
+    records = grist.fetch_all("Users")
+
+    for rec in records:
+        if rec.get("id") == user_row_id:
+            return rec.get("fields", {}).get("TelegramID")
+
+    return None

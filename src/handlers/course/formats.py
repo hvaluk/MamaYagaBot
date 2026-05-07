@@ -90,7 +90,7 @@ async def cflow_course_info(callback: CallbackQuery):
     )
 
 
-# ---------------- Start individual (из кнопки) ----------------
+# ---------------- Start individual  ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_individual")
 async def start_individual(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -116,7 +116,29 @@ async def start_individual(callback: CallbackQuery):
     )
 
 
-# ---------------- Consultation (из кнопки) ----------------
+# ---------------- INDIVIDUAL INFO ----------------
+
+@bot.callback_query_handler(
+    func=lambda c: c.data == "individual_info"
+)
+async def individual_info(callback: CallbackQuery):
+
+    await bot.answer_callback_query(callback.id)
+
+    chat_id = callback.message.chat.id
+
+    text = settings.get_text("INDIVIDUAL_DESC")
+
+    kb = await build_inline_kb("individual_info_kb")
+
+    await bot.send_message(
+        chat_id,
+        text,
+        reply_markup=kb,
+    )
+
+
+# ---------------- Consultation ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_consultation")
 async def start_consultation(callback: CallbackQuery):
     await bot.answer_callback_query(callback.id)
@@ -135,3 +157,16 @@ async def start_consultation(callback: CallbackQuery):
         parse_mode="Markdown",
         reply_markup=kb
     )
+
+# ------------------- INDIVIDUAL FROM FOLLOWUP -------------------
+@bot.callback_query_handler(func=lambda c: c.data == "fmt_individual_followup")
+async def individual_from_followup(callback: CallbackQuery):
+  
+    await bot.answer_callback_query(callback.id)
+    user_id = callback.from_user.id
+    chat_id = callback.message.chat.id
+    
+    text = settings.get_text("INDIVIDUAL_DESC")
+    kb = await build_inline_kb("followup_24h_kb")
+    
+    await bot.send_message(chat_id, text, reply_markup=kb)
