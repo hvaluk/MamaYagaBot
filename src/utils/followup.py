@@ -200,12 +200,9 @@ async def followup_worker():
                     # STAGE 0 -> FIRST FOLLOWUP
                     # =================================================
 
-                    # PROD:
-                    # timedelta(hours=24)
-
                     if (
                         stage == 0
-                        and delta >= timedelta(seconds=24)
+                        and delta >= timedelta(hours=24)
                     ):
 
                         text = settings.get_text(
@@ -236,12 +233,9 @@ async def followup_worker():
                     # STAGE 1 -> SECOND FOLLOWUP
                     # =================================================
 
-                    # PROD:
-                    # timedelta(days=3)
-
                     elif (
                         stage == 1
-                        and delta >= timedelta(seconds=30)
+                        and delta >= timedelta(days=3)
                     ):
 
                         # ---------- GREETING ----------

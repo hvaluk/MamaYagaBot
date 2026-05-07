@@ -245,7 +245,13 @@ class SettingsManager:
 
     @property
     def FOLLOWUP_CHECK_INTERVAL(self):
-        return self._get_int("FOLLOWUP_CHECK_INTERVAL", 600)
+        value = self._get_int("FOLLOWUP_CHECK_INTERVAL")
+
+        # safety net
+        if value < 60:
+            return 300  
+
+        return value
  
 # --- GLOBAL INSTANCE ---
 
