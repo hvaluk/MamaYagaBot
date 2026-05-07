@@ -21,7 +21,8 @@ async def start_course_flow(call: CallbackQuery):
         await create_application(user_id, {
             "entry_point": "course",
             "is_trial": False,
-            "current_step": "course_term"
+            "current_step": "course_term",
+            "format": "not_chosen"
         })
 
   

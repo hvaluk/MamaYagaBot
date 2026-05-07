@@ -13,6 +13,11 @@ from src.utils.state_manager import (
     get_application,
     update_application
 )
+from src.utils.humanize import (
+    humanize,
+    FORMAT_MAP,
+)
+
 
 # ===================== VALIDATION =====================
 FORBIDDEN_CONTACT_VALUES = {"назад", "back", "/start", "старт"}
@@ -148,7 +153,7 @@ async def notify_admins(message: Message, app: dict, contact: str):
         f"Чувства: {', '.join(feelings) if feelings else '—'}\n"
         f"Опыт: {fields.get('yoga_experience', '—')}\n"
         f"Запрос: {fields.get('request_type', '—')}\n"
-        f"Формат: {fields.get('format', '—')}\n"
+        f"Формат: {humanize(fields.get('format'), FORMAT_MAP)}\n"
         f"Контакт: {contact}\n"
         f"Дата: {format_human_datetime(fields.get('created_at'))}"
     )

@@ -57,6 +57,7 @@ async def consult_start(call: CallbackQuery):
 
     # full stop follow-up
     await update_application(user_id, {
+        "format": "fmt_consult",
         "followup_stage": 99,
         "status": "contact_requested"
     })

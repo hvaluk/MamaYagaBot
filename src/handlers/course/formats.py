@@ -24,7 +24,7 @@ async def choose_format(callback: CallbackQuery):
 
     # ---------------- COURSE ----------------
     if callback.data == "fmt_course":
-        await update_application(user_id, {"format": "course"})
+        await update_application(user_id, {"format": "fmt_course"})
         await set_state(user_id, "course_pay")
 
         text = settings.get_text("ONLINE_GROUP_CLASS_DESC")
@@ -35,7 +35,7 @@ async def choose_format(callback: CallbackQuery):
 
     # ---------------- INDIVIDUAL ----------------
     if callback.data == "fmt_individual":
-        await update_application(user_id, {"format": "individual"})
+        await update_application(user_id, {"format": "fmt_individual"})
         await set_state(user_id, "course_contact")
 
         text = (
@@ -56,7 +56,7 @@ async def choose_format(callback: CallbackQuery):
 
     # ---------------- CONSULTATION ----------------
     if callback.data == "fmt_consult":
-        await update_application(user_id, {"format": "consult"})
+        await update_application(user_id, {"format": "fmt_consult"})
         await set_state(user_id, "course_contact")
 
         text = (
@@ -137,6 +137,38 @@ async def individual_info(callback: CallbackQuery):
         reply_markup=kb,
     )
 
+# ---------------- INDIVIDUAL CONTACT ----------------
+
+@bot.callback_query_handler(
+    func=lambda c: c.data == "start_individual_contact"
+)
+async def start_individual_contact(callback: CallbackQuery):
+
+    await bot.answer_callback_query(callback.id)
+
+    user_id = callback.from_user.id
+    chat_id = callback.message.chat.id
+
+    # --- SAVE FORMAT ---
+    await update_application(user_id, {
+        "format": "fmt_individual",
+        "status": "contact_requested",
+        "followup_stage": 99,
+    })
+
+    # --- STATE ---
+    await set_state(user_id, "course_contact")
+
+    # --- UI ---
+    text = settings.get_text("CONTACT_REQUEST")
+
+    kb = await build_reply_kb("contact_request_kb")
+
+    await bot.send_message(
+        chat_id,
+        text,
+        reply_markup=kb
+    )
 
 # ---------------- Consultation ----------------
 @bot.callback_query_handler(func=lambda c: c.data == "start_consultation")
