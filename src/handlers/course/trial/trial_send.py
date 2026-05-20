@@ -1,10 +1,10 @@
 # src/handlers/course/trial/trial_send.py
 
 from telebot.types import CallbackQuery
-from datetime import datetime, timezone
+from datetime import datetime
 
 from src.common import bot
-from src.config import settings
+from src.config import settings, MINSK_TZ
 from src.keyboards.inline_kb import build_inline_kb
 from src.utils.state_manager import update_application
 
@@ -24,7 +24,7 @@ async def send_trial_lesson(callback: CallbackQuery):
         "is_trial": True,
         "followup_stage": 0,
         "followup_last_sent_at": None,
-        "trial_opened_at": datetime.now(timezone.utc).isoformat()
+        "trial_opened_at": datetime.now(MINSK_TZ).isoformat()
     })
 
     # Send the trial offer message with inline keyboard

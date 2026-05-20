@@ -1,11 +1,11 @@
 # src/utils/broadcast.py
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 import requests
 
 from src.common import bot
-from src.config import GRIST_BASE_URL, GRIST_DOC_ID, GRIST_API_KEY
+from src.config import GRIST_BASE_URL, GRIST_DOC_ID, GRIST_API_KEY, MINSK_TZ
 
 HEADERS = {"Authorization": f"Bearer {GRIST_API_KEY}"}
 
@@ -15,7 +15,7 @@ HEADERS = {"Authorization": f"Bearer {GRIST_API_KEY}"}
 # =========================================================
 
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(MINSK_TZ)
 
 
 def parse_dt(value):
@@ -24,10 +24,15 @@ def parse_dt(value):
 
     try:
         if isinstance(value, (int, float)):
-            return datetime.fromtimestamp(value, tz=timezone.utc)
+            return datetime.fromtimestamp(value, tz=MINSK_TZ)
 
         if isinstance(value, str):
-            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=MINSK_TZ)
+            else:
+                dt = dt.astimezone(MINSK_TZ)
+            return dt
 
     except Exception:
         return None

@@ -1,10 +1,10 @@
 # src/utils/followup.py
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from src.common import bot
-from src.config import settings
+from src.config import settings, MINSK_TZ
 from src.keyboards.inline_kb import build_inline_kb
 
 from src.utils.grist_helper import (
@@ -20,7 +20,7 @@ from src.utils.grist_helper import (
 # =========================================================
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(MINSK_TZ)
 
 
 def parse_dt(value) -> datetime | None:
@@ -33,7 +33,7 @@ def parse_dt(value) -> datetime | None:
         if isinstance(value, (int, float)):
             return datetime.fromtimestamp(
                 value,
-                tz=timezone.utc,
+                tz=MINSK_TZ,
             )
 
         if isinstance(value, str):
@@ -43,9 +43,9 @@ def parse_dt(value) -> datetime | None:
             )
 
             if dt.tzinfo is None:
-                dt = dt.replace(
-                    tzinfo=timezone.utc
-                )
+                dt = dt.replace(tzinfo=MINSK_TZ)
+            else:
+                dt = dt.astimezone(MINSK_TZ)
 
             return dt
 
@@ -230,11 +230,12 @@ async def followup_worker():
                             )
 
                     # =================================================
-                    # STAGE 1 -> SECOND FOLLOWUP
+                    # STAGE 1 or 3 -> SECOND FOLLOWUP
+                    # stage 3 = user clicked "remind later" from first followup
                     # =================================================
 
                     elif (
-                        stage == 1
+                        stage in (1, 3)
                         and delta >= timedelta(days=3)
                     ):
 

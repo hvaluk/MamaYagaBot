@@ -3,17 +3,17 @@
 import json
 import asyncio
 import requests
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 from src.utils.grist_client import grist
-from src.config import ADMIN_IDS, OWNER_IDS
+from src.config import ADMIN_IDS, OWNER_IDS, MINSK_TZ
 
 
 # ===================== TIME =====================
 
 def now_iso():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(MINSK_TZ).isoformat()
 
 
 # ===================== USERS =====================

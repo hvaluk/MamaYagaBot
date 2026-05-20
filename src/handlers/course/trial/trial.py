@@ -2,9 +2,9 @@
 
 
 from telebot.types import CallbackQuery
-from datetime import datetime, timezone
+from datetime import datetime
 from src.common import bot
-from src.config import settings
+from src.config import settings, MINSK_TZ
 from src.keyboards.inline_kb import build_inline_kb
 from src.utils.state_manager import set_state, update_application
 
@@ -18,7 +18,7 @@ async def start_trial_flow(call: CallbackQuery):
     await update_application(user_id, {
         "is_trial": True,
         "followup_stage": 0,
-        "trial_opened_at": datetime.now(timezone.utc).isoformat()
+        "trial_opened_at": datetime.now(MINSK_TZ).isoformat()
     })
 
     # --- SEND NEXT KEYBOARD ---
@@ -38,7 +38,7 @@ async def trial_lesson(callback: CallbackQuery):
     await update_application(user_id, {
         "is_trial": True,
         "followup_stage": 0,
-        "trial_opened_at": datetime.now(timezone.utc).isoformat()
+        "trial_opened_at": datetime.now(MINSK_TZ).isoformat()
     })
 
     kb = await build_inline_kb("trial_lesson_kb")
