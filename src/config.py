@@ -3,7 +3,10 @@
 import os
 import asyncio
 import requests
+from datetime import timezone, timedelta
 from dotenv import load_dotenv
+
+MINSK_TZ = timezone(timedelta(hours=3))
 
 load_dotenv()
 

@@ -2,11 +2,11 @@
 
 import re
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from telebot.types import Message, Contact, ReplyKeyboardRemove
 
 from src.common import bot
-from src.config import OWNER_IDS
+from src.config import OWNER_IDS, MINSK_TZ
 from src.utils.state_manager import (
     get_state,
     set_state,
@@ -33,16 +33,16 @@ def is_valid_username(text: str) -> bool:
 
 def format_human_datetime(value) -> str:
     if isinstance(value, (int, float)):
-        dt = datetime.fromtimestamp(value, tz=timezone.utc)
+        dt = datetime.fromtimestamp(value, tz=MINSK_TZ)
     elif isinstance(value, str):
         try:
-            dt = datetime.fromisoformat(value)
+            dt = datetime.fromisoformat(value).astimezone(MINSK_TZ)
         except Exception:
-            dt = datetime.now(timezone.utc)
+            dt = datetime.now(MINSK_TZ)
     else:
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(MINSK_TZ)
 
-    return dt.strftime("%d.%m.%Y %H:%M UTC")
+    return dt.strftime("%d.%m.%Y %H:%M +03:00")
 
 
 # ===================== FILTER =====================

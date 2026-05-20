@@ -1,8 +1,9 @@
 # src/utils/state_manager.py
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
+from src.config import MINSK_TZ
 from src.utils.grist_helper import (
     get_latest_application,
     update_application as grist_update_application,
@@ -96,5 +97,5 @@ async def stop_followup(user_id: int):
 async def mark_remind_later(user_id: int, days: int = 3):
     await grist_update_application(user_id, {
         "followup_stage": days,
-        "followup_last_sent_at": datetime.now(timezone.utc).isoformat()
+        "followup_last_sent_at": datetime.now(MINSK_TZ).isoformat()
     })

@@ -1,10 +1,11 @@
 # src/handlers/course/trial/trial_material.py
 
 from telebot.types import CallbackQuery
-from datetime import datetime, timezone
+from datetime import datetime
 
 from src.common import bot
 from src.config import settings
+from src.config import MINSK_TZ
 from src.utils.state_manager import get_application, update_application
 
 @bot.callback_query_handler(func=lambda c: c.data == "trial_lect")
@@ -18,10 +19,10 @@ async def open_trial_material(callback: CallbackQuery):
         return  # No application
 
     fields = {}
-    if not app.get("trial_opened_at"):
+    if not app.get("fields", {}).get("trial_opened_at"):
         fields = {
             "is_trial": True,
-            "trial_opened_at": datetime.now(timezone.utc).isoformat(),
+            "trial_opened_at": datetime.now(MINSK_TZ).isoformat(),
             "followup_stage": 0,
             "followup_last_sent_at": None
         }
